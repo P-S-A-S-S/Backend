@@ -51,8 +51,8 @@ const getColl = (collName) => {
 }
 
 // Get Documents from collection
-const getCursor = (collName, filter) => {
-	return state.db.collection(collName).find(filter);
+const getDocuments = (collName, filter) => {
+	return state.db.collection(collName).find(filter).toArray();
 }
 
-module.exports = {getDB, getColl, getCursor, connect, getPrimaryKey};
+module.exports = {getDB, getColl, getDocuments, connect, getPrimaryKey};

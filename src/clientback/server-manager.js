@@ -1,7 +1,8 @@
 const net = require("net");
 const fs = require ("fs");
 
-// Importem les funcions getDB, getColl(collectionName), getCursor(collectionName, filter), connect((err) => {...}) (connecta la base de dades), getPrimeryKey(_id) (retorna el ObjectID de _id)
+// Importem les funcions getDB, getColl(collectionName), getDocuments(collectionName, filter), connect((err) => {...}) (connecta la base de dades), getPrimeryKey(_id) (retorna el ObjectID de _id)
+// Per recollir els documents del obecte Promise retornat per getDocuments, cal passarli la funcio .then( (docs) => {...}));
 const db = require('../database/config.js');
 
 // Llistat amb els noms de les colleccions
