@@ -1,7 +1,13 @@
 const net = require("net");
 const fs = require ("fs");
-const mongoCli = require ('mongodb').MongoClient;
-const url = 'mongodb://localhost:27017/' //url a mongo
+
+// Importem les funcions getDB, getColl(collectionName), getCursor(collectionName, filter), connect((err) => {...}) (connecta la base de dades), getPrimeryKey(_id) (retorna el ObjectID de _id)
+const db = require('../database/config.js');
+
+// Llistat amb els noms de les colleccions
+const collections = ['client', 'comanda', 'user'];
+
+
 
 function startSockets() {
 	const server = net.createServer();
@@ -26,16 +32,6 @@ function startSockets() {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	const pData = JSON.parse(data)
 	    	console.log(pData.id); //strin a Json
-	    	mongoCli.connect(url, function(err, db) {
-	  			if (err) throw err;
-	  			var dbo = db.db("data");
-	  			var myobj = {"id": 0, "so": "lin", "lIp": "192.168.207.222", "command": "x", "oPut": "testtesttesttest"}
-	  			dbo.collection("clients").insertOne(myobj, function(err, res) {
-	    			if (err) throw err;
-	    			console.log("1 document inserted");
-	    			db.close();
-	  			});
-			}); 
 	    });
 		//Timeout
 		//socket.setTimeout(tout);
