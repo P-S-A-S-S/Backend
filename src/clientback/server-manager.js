@@ -1,13 +1,13 @@
 const net = require("net");
 const fs = require ("fs");
 const mongoCli = require ('mongodb').MongoClient;
-const url = 'mongodb://localhost:27017/' //url a mongo
+const url = 'mongodb://127.0.0.1:27017'; //url a mongo
 
 function startSockets() {
 	const server = net.createServer();
 	const port = 1234;
 	const host = "0.0.0.0";
-	const tout = 3000 //ms para timeout
+	const tout = 3000; //ms para timeout
 	//let secret = []; array secretos para cada cli(?)
 	let sockets = [];
 
@@ -25,25 +25,32 @@ function startSockets() {
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	const pData = JSON.parse(data)
-	    	console.log(pData.id); //strin a Json
-	    	mongoCli.connect(url, function(err, db) {
-	  			if (err) throw err;
-	  			var dbo = db.db("data");
-	  			var myobj = {"id": 0, "so": "lin", "lIp": "192.168.207.222", "command": "x", "oPut": "testtesttesttest"}
-	  			dbo.collection("clients").insertOne(myobj, function(err, res) {
-	    			if (err) throw err;
-	    			console.log("1 document inserted");
-	    			db.close();
-	  			});
+	    	socket.write(`ok`)
+	    	console.log(pData); //strin a Json
+	    	if (pData.id === 0) { //identifica cliente con  id 0
+	    		console.log("id 0, asignando uno nuevo")
+	    		mongoCli.connect(url, function(err, db) { //connecta mongo cli
+	  				if (err) throw err;
+	  				var dbo = db.db("data");
+	  				//var myobj = {"id": 0, "so": "lin", "lIp": "10.5.0.6", "command": "x", "oPut": "testtesttesttest"}
+	  				dbo.collection("clients").insertOne(pData, function(err, res) { //insert
+	    				if (err) throw err;
+	    				console.log("1 document inserted");
+	    				db.close();
+	  				});
+				}); 
+	    	};
+			mongoCli.connect(url, function(err, db) { //consulta
+				if (err) throw err;
+				var dbo = db.db("data");
+				dbo.collection("clients").find({}).toArray(function(err, result) {
+					if (err) throw err;
+					console.log(result);
+					db.close();
+		  		});
 			}); 
+	    	socket.write(``)
 	    });
-		//Timeout
-		//socket.setTimeout(tout);
-		//socket.on('timeout', () => {
-	  	//	console.log('socket timeout');
-		//	socket.end();
-		//});
-		//salida
 		socket.on('close', (data) => {
 	        const index = sockets.findIndex( (o) => { 
 	            return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
