@@ -1,20 +1,16 @@
 const net = require("net");
 const fs = require ("fs");
-
 // Importem les funcions getDB, getColl(collectionName), getDocuments(collectionName, filter), connect((err) => {...}) (connecta la base de dades), getPrimeryKey(_id) (retorna el ObjectID de _id)
 // Per recollir els documents del obecte Promise retornat per getDocuments, cal passarli la funcio .then( (docs) => {...}));
 const db = require('../database/config.js');
-
 // Llistat amb els noms de les colleccions
 const collections = ['client', 'comanda', 'user'];
-
-
 
 function startSockets() {
 	const server = net.createServer();
 	const port = 1234;
 	const host = "0.0.0.0";
-	const tout = 3000 //ms para timeout
+	const tout = 3000; //ms para timeout
 	//let secret = []; array secretos para cada cli(?)
 	let sockets = [];
 
@@ -33,14 +29,12 @@ function startSockets() {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	const pData = JSON.parse(data)
 	    	console.log(pData.id); //strin a Json
+	    	socket.write(`ok`)
+	    	console.log(pData); //strin a Json
+	    	if (pData.id === 0) { //identifica cliente con  id 0
+	    		console.log("id 0, asignando uno nuevo")
+	    	};	
 	    });
-		//Timeout
-		//socket.setTimeout(tout);
-		//socket.on('timeout', () => {
-	  	//	console.log('socket timeout');
-		//	socket.end();
-		//});
-		//salida
 		socket.on('close', (data) => {
 	        const index = sockets.findIndex( (o) => { 
 	            return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
