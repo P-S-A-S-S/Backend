@@ -1,5 +1,6 @@
 const net = require("net");
 const fs = require ("fs");
+const encrypt = require('./crypto/crypto');
 const mongoCli = require ('mongodb').MongoClient;
 const url = 'mongodb://127.0.0.1:27017'; //url a mongo
 
@@ -25,7 +26,9 @@ function startSockets() {
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	const pData = JSON.parse(data)
-	    	socket.write(`ok`)
+	    	const hash = encrypt.encrypt('Hello World!');
+			console.log(hash);
+	    	socket.write(`toma secret ${hash}`)
 	    	console.log(pData); //strin a Json
 	    	if (pData.id === 0) { //identifica cliente con  id 0
 	    		console.log("id 0, asignando uno nuevo")
@@ -40,16 +43,16 @@ function startSockets() {
 	  				});
 				}); 
 	    	};
-			mongoCli.connect(url, function(err, db) { //consulta
-				if (err) throw err;
-				var dbo = db.db("data");
-				dbo.collection("clients").find({}).toArray(function(err, result) {
-					if (err) throw err;
-					console.log(result);
-					db.close();
-		  		});
-			}); 
-	    	socket.write(``)
+//			mongoCli.connect(url, function(err, db) { //consulta
+//				if (err) throw err;
+//				var dbo = db.db("data");
+//				dbo.collection("clients").find({}).toArray(function(err, result) {
+//					if (err) throw err;
+//					console.log(result);
+//					db.close();
+//		  		});
+//			}); 
+//	    	socket.write(``)
 	    });
 		socket.on('close', (data) => {
 	        const index = sockets.findIndex( (o) => { 
