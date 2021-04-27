@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const https = require('https');
+const fetch = require('node-fetch');
 
 function startBackend(){
     const app = express();
@@ -18,6 +19,10 @@ function startBackend(){
         console.log("Esto se ejecuta en la consola del servidor");
         res.send("Accion realizada.");
     });
+    app.get('/command=:cmd', (req, res)=>{
+        fetch(`http://localhost:1234/command=${req.params.cmd}`)
+    });
+
     app.get('*', (req, res)=>{
         res.send("Error 404: Bro esta pagina no existe XD")
     });
