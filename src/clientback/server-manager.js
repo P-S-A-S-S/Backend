@@ -34,17 +34,6 @@ function startSockets() {
 	    	const hash = encrypt.encrypt('Hello World!');
 			console.log(hash);
 	    	socket.write(`toma secret ${hash}`)
-//			mongoCli.connect(url, function(err, db) { //consulta
-//				if (err) throw err;
-//				var dbo = db.db("data");
-//				dbo.collection("clients").find({}).toArray(function(err, result) {
-//					if (err) throw err;
-//					console.log(result);
-//					db.close();
-//		  		});
-//			}); 
-//	    	socket.write(``)
-
 			var getdata = String(data).split(" ", 2);
 			console.log(getdata)
 			if (getdata[0] === "GET") {
@@ -72,9 +61,7 @@ function startSockets() {
 		    	if (pData.id === 0) { //identifica cliente con  id 0
 		    		console.log("id 0, asignando uno nuevo")
 		    	};
-				
 			};
-	    	
 	    });
 		socket.on('close', (data) => {
 	        const index = sockets.findIndex( (o) => { 
@@ -92,6 +79,5 @@ function startSockets() {
 		}); 
 	});
 };
-
 exports.startSockets = startSockets;
 //secret.push(crypto.randomBytes(20).toString('hex'));
