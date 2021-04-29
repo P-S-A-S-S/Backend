@@ -45,14 +45,24 @@ const getDB = () => {
 	return state.db;
 }
 
-// Get collection function
+// Get Collections, returns Promise
 const getColl = (collName) => {
 	return state.db.collection(collName);
 }
 
-// Get Documents from collection
-const getDocuments = (collName, filter) => {
-	return state.db.collection(collName).find(filter).toArray();
+// Get documents from collection, returns Promise
+const getDocuments = (coll, filter) => {
+	return coll.find(filter).toArray();
 }
 
-module.exports = {getDB, getColl, getDocuments, connect, getPrimaryKey};
+// Insert one document into specified collection, returns Promise
+const insertDocument = (coll, doc) => {
+	return coll.insertOne(doc);
+}
+
+// Update the first document that matches the filter of the specified collection, returns Promise
+const updateDocument = (coll, filter, update) => {
+	return coll.updateOne(filter, update);
+}
+
+module.exports = {connect, getPrimaryKey, getDB, getColl, getDocuments, insertDocument, updateDocument};
