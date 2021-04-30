@@ -19,8 +19,9 @@ function startBackend(){
         console.log("Esto se ejecuta en la consola del servidor");
         res.send("Accion realizada.");
     });
-    app.get('/command=:cmd', (req, res)=>{
-        fetch(`http://localhost:1234/command=${req.params.cmd}`)
+    app.get('/command=:cmd/endp=:hosts', (req, res)=>{
+        fetch(`http://localhost:1234/command=${req.params.cmd}_._/endp=${req.params.hosts}`)
+        
     });
 
     app.get('*', (req, res)=>{

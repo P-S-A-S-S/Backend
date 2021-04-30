@@ -24,49 +24,65 @@ function startSockets() {
 		console.log(sockets.length);
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
-	    	const pData = JSON.parse(data)
-	    	console.log(pData.id); //strin a Json
-	    	socket.write(`ok`)
-	    	console.log(pData); //strin a Json
-	    	if (pData.id === 0) { //identifica cliente con  id 0
-	    		console.log("id 0, asignando uno nuevo")
-	    	};	
-	    	const hash = encrypt.encrypt('Hello World!');
-			console.log(hash);
-	    	socket.write(`toma secret ${hash}`)
-			var getdata = String(data).split(" ", 2);
-			console.log(getdata)
-			if (getdata[0] === "GET") {
+	    	//si getdata == a GET
+	    	console.log(`data: ${data}`)
+	    	var getdata = String(data).split(" ", 2);
+	    	console.log(`getdata: ${getdata}`)
+	    	if (getdata[0] === "GET") {
 				websocket.push(socket);
-				var precmd = String(getdata[1]).split("/command=", 2);
-				var cmd = String(precmd[1]).split("%20");
-				var rcmd = "";
-				cmd.forEach(str => {
-					rcmd += str + " ";
-				});
-				rcmd = String(rcmd)
-				console.log(`comando a ejecutar: ${rcmd}`)
+				//parsing command and enpoints
+				var parsing = getdata[1].split("_._/")
+				var cmdp = parsing[0].split("/command=")[1].split("%20")
+				var endp = parsing[1].split("endp=")[1].split(",")
+				var command = "";
+				cmdp.forEach(str => {
+					command += str + " ";
+				});					
+				command = String(command)
+				console.log(endp)
+				console.log(`comando a ejecutar: ${command} en los endpoints ${String(endp)}`)
+
 				socket.write(
 					'HTTP/1.0 200 OK\r\n' +
 					'\r\n'
 					    );
 				socket.write("'Connection': 'close'");
-				socket.end(); // HTTP 1.0 signals end of packet by closing the socket
-			} else {
-				sockets.push(socket);
-				console.log(`${clientAddress}: ${data}`); //output mensaje cliente
-		    	const pData = JSON.parse(data)
-		    	socket.write(`ok`)
-		    	console.log(pData); //strin a Json
-		    	if (pData.id === 0) { //identifica cliente con  id 0
+				console.log("resposta http")
+//				socket.end(); // HTTP 1.0 signals end of packet by closing the socket
+	    	} else {
+	    		const pData = JSON.parse(data)
+	    		sockets.push(socket);
+	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
 		    		console.log("id 0, asignando uno nuevo")
-		    	};
-			};
+			    	db.connect((err) =>{
+			    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
+			   			console.log(jstring)
+			    		var cliColl = db.getColl(collections[0])
+			   			var sJson = JSON.stringify(jstring)
+			   			console.log("insertando")
+			   			db.insertDocument(cliColl, jstring).then((doc) => {
+			   				//print client ID
+			   				console.log(doc.insertedId);
+			   				socket.write(doc.insertedId);
+			   				socket["id"]=doc.insertedId;
+			   				console.log(socket["id"])
+
+			   			});
+		    		});
+		    	}else { //cuando el cliente ya tiene id
+
+		    	}
+	    	};
 	    });
 		socket.on('close', (data) => {
+			//extrae ip y puerto del array de sockets
 	        const index = sockets.findIndex( (o) => { 
 	            return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
 	        }); 
+	        //extrae ip y puerto del array de websockets
+//	        const windex = websocket.findeindex( (z) =>{
+//	        	return z.remoteAddress === websocket.remoteAddress) && (z.remotePort === websocket.remotePort)
+//	        })
 	        if (index !== -1) sockets.splice(index, 1); 
 			sockets.forEach((sock) => { 
 				sock.write(`${clientAddress} disconnected\n`); 
