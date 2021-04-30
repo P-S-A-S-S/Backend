@@ -19,9 +19,15 @@ function startBackend(){
         console.log("Esto se ejecuta en la consola del servidor");
         res.send("Accion realizada.");
     });
-    app.get('/command=:cmd/endp=:hosts', (req, res)=>{
-        fetch(`http://localhost:1234/command=${req.params.cmd}_._/endp=${req.params.hosts}`)
-        
+    app.get('/command=:cmd/endp=:hosts', async (req, res)=>{
+        let resdata = await fetch(`http://localhost:1234/command=${req.params.cmd}_._/endp=${req.params.hosts}`).then(res =>{
+            return res.text()
+        }).then(body =>{
+            console.log("Console log dintre del fetch: ",body)
+            return body
+        });
+        console.log("Console log fora del fetch:", resdata)
+        res.send(resdata)
     });
 
     app.get('*', (req, res)=>{

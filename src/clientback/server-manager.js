@@ -25,9 +25,7 @@ function startSockets() {
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	//si getdata == a GET
-	    	console.log(`data: ${data}`)
 	    	var getdata = String(data).split(" ", 2);
-	    	console.log(`getdata: ${getdata}`)
 	    	if (getdata[0] === "GET") {
 				websocket.push(socket);
 				//parsing command and enpoints
@@ -37,40 +35,56 @@ function startSockets() {
 				var command = "";
 				cmdp.forEach(str => {
 					command += str + " ";
-				});					
+				});
+				console.log("host",host)
 				command = String(command)
-				console.log(endp)
-				console.log(`comando a ejecutar: ${command} en los endpoints ${String(endp)}`)
-
-				socket.write(
-					'HTTP/1.0 200 OK\r\n' +
-					'\r\n'
-					    );
+				endp.forEach( host =>{
+					sockets.forEach( sock =>{
+						if (host === sock["id"]){
+							console.log("hey")
+							sock.write(`{"order": "shell", "command": "${command}"}`)
+						};
+					});
+				});
+				console.log(`comando a ejecutar: ${command} en los endpoints ${String(endp)}`);			
+				socket.write([
+					'HTTP/1.1 200 OK',
+				    'Content-Type: text/html; charset=UTF-8',
+				    'Content-Encoding: UTF-8',
+				    'Accept-Ranges: bytes',
+				    'Connection: keep-alive',
+					].join('\n') + '\n\n');
 				socket.write("'Connection': 'close'");
 				console.log("resposta http")
-//				socket.end(); // HTTP 1.0 signals end of packet by closing the socket
+				socket.end(); // HTTP 1.0 signals end of packet by closing the socket
 	    	} else {
 	    		const pData = JSON.parse(data)
-	    		sockets.push(socket);
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
 		    		console.log("id 0, asignando uno nuevo")
-			    	db.connect((err) =>{
-			    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
-			   			console.log(jstring)
-			    		var cliColl = db.getColl(collections[0])
-			   			var sJson = JSON.stringify(jstring)
-			   			console.log("insertando")
-			   			db.insertDocument(cliColl, jstring).then((doc) => {
-			   				//print client ID
-			   				console.log(doc.insertedId);
-			   				socket.write(doc.insertedId);
-			   				socket["id"]=doc.insertedId;
-			   				console.log(socket["id"])
-
-			   			});
-		    		});
+		    		//const getAndSendId = async() => {
+			    		db.connect( async (err) =>{
+				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
+				   			console.log(jstring)
+				    		var cliColl = db.getColl(collections[0])
+				   			var sJson = JSON.stringify(jstring)
+				   			console.log("insertando")
+				   			await db.insertDocument(cliColl, jstring).then((doc) => {
+				   				//print client ID
+				   				socket["id"] = JSON.stringify(doc.insertedId);
+				   				console.log(`socket_id:${socket["id"]}`)
+				   			});
+				   			console.log("Tipo de dato: ",typeof(socket["id"]));
+			    			console.log("Supuesta id: ",socket["id"])
+			    			sockets.push(socket);
+			    			socket.write(`{ "id" : "${socket["id"]}"}`)
+			    		});
+			    			
+		    		//};
+			    	
 		    	}else { //cuando el cliente ya tiene id
-
+		    		socket["id"] = JSON.stringify(pData.head.id)
+		    		sockets.push(socket);
+		    		console.log(sockets[0]["id"])
 		    	}
 	    	};
 	    });
