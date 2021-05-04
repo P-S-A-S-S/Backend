@@ -6,6 +6,7 @@ const db = require('../database/config.js');
 // Llistat amb els noms de les colleccions
 const collections = ['client', 'comanda', 'user'];
 const encrypt = require('./crypto/crypto');
+const resp = require('./callback-manager')
 const split = require ("split");
 const http = require ("http");
 function startSockets() {
@@ -18,49 +19,24 @@ function startSockets() {
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
 	});
+
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
 		console.log(sockets.length);
+
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	//si getdata == a GET
 	    	var getdata = String(data).split(" ", 2);
 	    	if (getdata[0] === "GET") {
-				websocket.push(socket);
-				//parsing command and enpoints
-				var parsing = getdata[1].split("_._/")
-				var cmdp = parsing[0].split("/command=")[1].split("%20")
-				var endp = parsing[1].split("endp=")[1].split(",")
-				var command = "";
-				cmdp.forEach(str => {
-					command += str + " ";
-				});
-				console.log("host",host)
-				command = String(command)
-				endp.forEach( endp =>{
-					sockets.forEach( sock =>{
-						if (endp === sock["id"].replace(/['"]+/g, '')){
-							sock.write(`{"order": "shell", "command": "${command}"}`)
-						};
-					});
-				});
-				console.log(`comando a ejecutar: ${command} en los endpoints ${String(endp)}`);			
-				socket.write([
-					'HTTP/1.1 200 OK',
-				    'Content-Type: text/html; charset=UTF-8',
-				    'Content-Encoding: UTF-8',
-				    'Accept-Ranges: bytes',
-				    'Connection: keep-alive',
-					].join('\n') + '\n\n');
-				socket.write("'Connection': 'close'");
-				console.log("resposta http")
-				socket.end(); // HTTP 1.0 signals end of packet by closing the socket
+	    		websocket.push(socket);
+	    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
 	    	} else {
 	    		const pData = JSON.parse(data)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
 		    		console.log("id 0, asignando uno nuevo")
-		    		//const getAndSendId = async() => {
+
 			    		db.connect( async (err) =>{
 				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
 				   			console.log(jstring)
@@ -78,7 +54,6 @@ function startSockets() {
 			    			socket.write(`{ "id" : ${socket["id"]}}`)
 			    		});
 			    			
-		    		//};
 			    	
 		    	}else { //cuando el cliente ya tiene id
 		    		socket["id"] = JSON.stringify(pData.head.id)
@@ -86,7 +61,12 @@ function startSockets() {
 		    		console.log(sockets[0]["id"])
 		    	}
 	    	};
+
+
 	    });
+
+
+
 		socket.on('close', (data) => {
 			//extrae ip y puerto del array de sockets
 	        //const index = sockets.findIndex( (o) => { 
