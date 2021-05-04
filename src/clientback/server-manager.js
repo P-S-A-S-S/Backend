@@ -38,10 +38,9 @@ function startSockets() {
 				});
 				console.log("host",host)
 				command = String(command)
-				endp.forEach( host =>{
+				endp.forEach( endp =>{
 					sockets.forEach( sock =>{
-						if (host === sock["id"]){
-							console.log("hey")
+						if (endp === sock["id"].replace(/['"]+/g, '')){
 							sock.write(`{"order": "shell", "command": "${command}"}`)
 						};
 					});
@@ -76,7 +75,7 @@ function startSockets() {
 				   			console.log("Tipo de dato: ",typeof(socket["id"]));
 			    			console.log("Supuesta id: ",socket["id"])
 			    			sockets.push(socket);
-			    			socket.write(`{ "id" : "${socket["id"]}"}`)
+			    			socket.write(`{ "id" : ${socket["id"]}}`)
 			    		});
 			    			
 		    		//};
@@ -90,17 +89,18 @@ function startSockets() {
 	    });
 		socket.on('close', (data) => {
 			//extrae ip y puerto del array de sockets
-	        const index = sockets.findIndex( (o) => { 
-	            return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
-	        }); 
+	        //const index = sockets.findIndex( (o) => { 
+	        //    return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
+	        //}); 
 	        //extrae ip y puerto del array de websockets
 //	        const windex = websocket.findeindex( (z) =>{
 //	        	return z.remoteAddress === websocket.remoteAddress) && (z.remotePort === websocket.remotePort)
 //	        })
-	        if (index !== -1) sockets.splice(index, 1); 
-			sockets.forEach((sock) => { 
-				sock.write(`${clientAddress} disconnected\n`); 
-			}); 
+	        //if (index !== -1) sockets.splice(index, 1); 
+			//sockets.forEach((sock) => { 
+			//	sock.write(`${clientAddress} disconnected\n`); 
+			//});
+			sockets.pop(); //Pau mirat aixo XD
 			console.log(`connection closed: ${clientAddress}`); 
 	    }); 
 		// Gestor d'errors 
