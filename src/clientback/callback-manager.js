@@ -24,8 +24,9 @@ function httpRes(socket, sockets, getdata){
 	    'Connection: keep-alive',
 		].join('\n') + '\n\n');
 	socket.write("'Connection': 'close'");
-	console.log("resposta http")
 	socket.end(); // HTTP 1.0 signals end of packet by closing the socket
 }
+
+
 
 exports.httpRes = httpRes;

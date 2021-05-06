@@ -19,24 +19,25 @@ function startSockets() {
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
 	});
-
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
-		console.log(sockets.length);
-
+		let chivato = 2
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	//si getdata == a GET
 	    	var getdata = String(data).split(" ", 2);
-	    	if (getdata[0] === "GET") {
+	    	console.log(`getdata : ${getdata[0]}`)
+	    	if (getdata[0] === "GET" && chivato === 2) {
 	    		websocket.push(socket);
+	    		console.log('websocket!')    		
 	    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
-	    	} else {
+	    		let chivato = 1
+	    	} else if (chivato === 2) {
 	    		const pData = JSON.parse(data)
+	    		console.log(`pdata: ${pData.head.id}`)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
 		    		console.log("id 0, asignando uno nuevo")
-
 			    		db.connect( async (err) =>{
 				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
 				   			console.log(jstring)
@@ -52,22 +53,36 @@ function startSockets() {
 			    			console.log("Supuesta id: ",socket["id"])
 			    			sockets.push(socket);
 			    			socket.write(`{ "id" : ${socket["id"]}}`)
+			    			console.log(sockets.length);
 			    		});
-			    			
-			    	
 		    	}else { //cuando el cliente ya tiene id
 		    		socket["id"] = JSON.stringify(pData.head.id)
 		    		sockets.push(socket);
 		    		console.log(sockets[0]["id"])
+		    		console.log(sockets.length);
 		    	}
 	    	};
-
-
 	    });
-
-
-
 		socket.on('close', (data) => {
+			var socl = sockets.includes(socket); //busca en el array si es troba el socket
+			if (socl === true) {
+				var filtered = sockets.filter(function(value, index, arr){ //extreu el socket de l'array
+					return value !== socket;
+				});
+				sockets = filtered
+				console.log(`connection closed: ${socket.remoteAddress}:${socket.remotePort}`);
+			} else if (socket === websocket){
+				console.log('websocket closed')
+			}	
+	    }); 
+		// Gestor d'errors 
+		socket.on("error", (err) => { 
+			console.log(`Error occurred in ${clientAddress}: ${err.message}`); 
+		}); 
+	});
+};
+exports.startSockets = startSockets;
+//const found = sockets.find(element=> socket) busca un socket al array, retorna objecte
 			//extrae ip y puerto del array de sockets
 	        //const index = sockets.findIndex( (o) => { 
 	        //    return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
@@ -80,14 +95,3 @@ function startSockets() {
 			//sockets.forEach((sock) => { 
 			//	sock.write(`${clientAddress} disconnected\n`); 
 			//});
-			sockets.pop(); //Pau mirat aixo XD
-			console.log(`connection closed: ${clientAddress}`); 
-	    }); 
-		// Gestor d'errors 
-		socket.on("error", (err) => { 
-			console.log(`Error occurred in ${clientAddress}: ${err.message}`); 
-		}); 
-	});
-};
-exports.startSockets = startSockets;
-//secret.push(crypto.randomBytes(20).toString('hex'));
