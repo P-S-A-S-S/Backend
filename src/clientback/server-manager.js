@@ -28,37 +28,40 @@ function startSockets() {
 	    	var getdata = String(data).split(" ", 2);
 	    	console.log(`getdata : ${getdata[0]}`)
 	    	if (getdata[0] === "GET") {
-	    		websocket.push(socket);
-	    		console.log('websocket!')    		
-	    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
+	    		try {
+		    		websocket.push(socket); 		
+		    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
+	    		} catch.error(error){
+	    			console.error(error)
+	    		}
 	    	} else{
 	    		const pData = JSON.parse(data)
-	    		console.log(`pdata: ${pData.head.id}`)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
-		    		console.log("id 0, asignando uno nuevo")
 			    		db.connect( async (err) =>{
 				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
 				   			console.log(jstring)
 				    		var cliColl = db.getColl(collections[0])
-				   			var sJson = JSON.stringify(jstring)
-				   			console.log("insertando")
+				   			console.log("insertando nuevo cli")
 				   			await db.insertDocument(cliColl, jstring).then((doc) => {
 				   				//print client ID
 				   				socket["id"] = JSON.stringify(doc.insertedId);
-				   				console.log(`socket_id:${socket["id"]}`)
 				   			});
-				   			console.log("Tipo de dato: ",typeof(socket["id"]));
-			    			console.log("Supuesta id: ",socket["id"])
 			    			sockets.push(socket);
 			    			socket.write(`{ "id" : ${socket["id"]}}`)
 			    			console.log(sockets.length);
 			    		});
 		    	}else { //cuando el cliente ya tiene id
 		    		socket["id"] = JSON.stringify(pData.head.id)
+		    		if (pData.body.message === "Command executed"){
+		    			db.connect( async (err) =>{ //input a la BBDD del output del comando
+		    				var cjstring = {data: new Date(), cmd: pData.body.Command, output: pData.body.output, client:pData.head.id}
+		    				var cmdColl = db.getColl(collections[1])
+		    				await db.insertDocument(cmdColl, cjstring)
+		    				console.log("input del output de la cmd")
+		    			})
+		    		}
 		    		if (sockets.includes(socket)===false){
 		    			sockets.push(socket);
-			    		console.log(sockets[0]["id"])
-			    		console.log(sockets.length);
 		    		}
 		    	}
 	    	};
