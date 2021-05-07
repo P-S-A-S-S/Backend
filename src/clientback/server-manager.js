@@ -31,9 +31,9 @@ function startSockets() {
 	    		try {
 		    		websocket.push(socket); 		
 		    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
-	    		} catch.error(error){
-	    			console.error(error)
-	    		}
+	    		} catch (error) {
+					console.log(error)
+				}
 	    	} else{
 	    		const pData = JSON.parse(data)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
