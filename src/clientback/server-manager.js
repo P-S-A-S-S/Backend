@@ -22,18 +22,16 @@ function startSockets() {
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
-		let chivato = 2
 		socket.on("data", (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	//si getdata == a GET
 	    	var getdata = String(data).split(" ", 2);
 	    	console.log(`getdata : ${getdata[0]}`)
-	    	if (getdata[0] === "GET" && chivato === 2) {
+	    	if (getdata[0] === "GET") {
 	    		websocket.push(socket);
 	    		console.log('websocket!')    		
 	    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
-	    		let chivato = 1
-	    	} else if (chivato === 2) {
+	    	} else{
 	    		const pData = JSON.parse(data)
 	    		console.log(`pdata: ${pData.head.id}`)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
@@ -57,9 +55,11 @@ function startSockets() {
 			    		});
 		    	}else { //cuando el cliente ya tiene id
 		    		socket["id"] = JSON.stringify(pData.head.id)
-		    		sockets.push(socket);
-		    		console.log(sockets[0]["id"])
-		    		console.log(sockets.length);
+		    		if (sockets.includes(socket)===false){
+		    			sockets.push(socket);
+			    		console.log(sockets[0]["id"])
+			    		console.log(sockets.length);
+		    		}
 		    	}
 	    	};
 	    });
