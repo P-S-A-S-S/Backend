@@ -8,9 +8,9 @@ function httpRes(socket, sockets, getdata){
 		command += str + " ";
 	});
 	command = String(command)
-	endp.forEach( endp =>{
+	endp.forEach( endpo =>{
 		sockets.forEach( sock =>{
-			if (endp === sock["id"].replace(/['"]+/g, '')){
+			if (endpo === sock["id"].replace(/['"]+/g, '')){
 				sock.write(`{"order": "shell", "command": "${command}"}`)
 			};
 		});

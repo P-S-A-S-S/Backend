@@ -27,14 +27,15 @@ function startBackend(){
             console.log('received: %s', message);
             ws.send(`Hello, you sent -> ${message}`);
         });
-    
         //send immediatly a feedback to the incoming connection    
         ws.send('Hi there, I am a WebSocket server');
     });
     app.get('/', public);
     app.get('/consolelog', (req, res)=>{
         console.log("Esto se ejecuta en la consola del servidor");
-        res.send("Accion realizada.");
+    });
+    app.post('/outputback', jsonParser, (req, res)=>{//comando=req.body.cmd, output=req.body.output, endpoint=req.body.endp
+        console.log(`rebut:\ncomando:${req.body.cmd}\n${req.body.output}endpoint:${req.body.endp}`);
     });
     app.get('/command=:cmd/endp=:hosts', async (req, res)=>{
         let resdata = await fetch(`http://localhost:1234/command=${req.params.cmd}_._/endp=${req.params.hosts}`).then(res =>{
@@ -66,5 +67,4 @@ function startBackend(){
         console.log(`Server started on port ${server.address().port} :)`);
     });
 };
-
 exports.startBackend = startBackend;

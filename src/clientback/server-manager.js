@@ -8,12 +8,19 @@ const collections = ['client', 'comanda', 'user'];
 const encrypt = require('./crypto/crypto');
 const resp = require('./callback-manager')
 const split = require ("split");
+const fetch = require('node-fetch');
 const http = require ("http");
+const https = require('https');
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+    });
+
 function startSockets() {
 	const server = net.createServer();
 	const port = 1234;
 	const host = "0.0.0.0";
 	const tout = 3000; //ms para timeout
+	const url = "https://127.0.0.1:5000/outputback";
 	let sockets = [];
 	let websocket = [];
 	server.listen(port, host, () => {
@@ -37,28 +44,40 @@ function startSockets() {
 	    	} else{
 	    		const pData = JSON.parse(data)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
-			    		db.connect( async (err) =>{
-				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
-				   			console.log(jstring)
-				    		var cliColl = db.getColl(collections[0])
-				   			console.log("insertando nuevo cli")
-				   			await db.insertDocument(cliColl, jstring).then((doc) => {
-				   				//print client ID
-				   				socket["id"] = JSON.stringify(doc.insertedId);
-				   			});
-			    			sockets.push(socket);
-			    			socket.write(`{ "id" : ${socket["id"]}}`)
-			    			console.log(sockets.length);
-			    		});
+			    		//db.connect( async (err) =>{
+				    	//	var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
+				   		//	console.log(jstring)
+				    	//	var cliColl = db.getColl(collections[0])
+				   		//	console.log("insertando nuevo cli")
+				   		//	await db.insertDocument(cliColl, jstring).then((doc) => {
+				   		//		//print client ID
+				   		//		socket["id"] = JSON.stringify(doc.insertedId);
+				   		//	});
+			    		//	sockets.push(socket);
+			    		//	socket.write(`{ "id" : ${socket["id"]}}`)
+			    		//	console.log(sockets.length);
+			    		//});
+			    		console.log("id 0")
 		    	}else { //cuando el cliente ya tiene id
 		    		socket["id"] = JSON.stringify(pData.head.id)
 		    		if (pData.body.message === "Command executed"){
-		    			db.connect( async (err) =>{ //input a la BBDD del output del comando
-		    				var cjstring = {data: new Date(), cmd: pData.body.Command, output: pData.body.output, client:pData.head.id}
-		    				var cmdColl = db.getColl(collections[1])
-		    				await db.insertDocument(cmdColl, cjstring)
-		    				console.log("input del output de la cmd")
-		    			})
+		    			console.log(pData)
+		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
+		    			//db.connect( async (err) =>{ //input a la BBDD del output del comando
+		    			//	var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
+		    			//	var cmdColl = db.getColl(collections[1])
+		    			//	await db.insertDocument(cmdColl, cjstring)
+		    			//	console.log("input del output de la cmd")
+		    			//})
+		    			fetch(url, {
+						  method: 'POST', // or 'PUT'
+						  headers:{
+						    'Content-Type': 'application/json',
+						    'Accept': 'application/json'
+						  },
+						  body: JSON.stringify(outdata), // data can be `string` or {object}!
+						  agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
+						}).catch(error => console.error('Error:', error))
 		    		}
 		    		if (sockets.includes(socket)===false){
 		    			sockets.push(socket);
