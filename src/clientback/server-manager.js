@@ -44,31 +44,31 @@ function startSockets() {
 	    	} else{
 	    		const pData = JSON.parse(data)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
-			    		//db.connect( async (err) =>{
-				    	//	var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
-				   		//	console.log(jstring)
-				    	//	var cliColl = db.getColl(collections[0])
-				   		//	console.log("insertando nuevo cli")
-				   		//	await db.insertDocument(cliColl, jstring).then((doc) => {
-				   		//		//print client ID
-				   		//		socket["id"] = JSON.stringify(doc.insertedId);
-				   		//	});
-			    		//	sockets.push(socket);
-			    		//	socket.write(`{ "id" : ${socket["id"]}}`)
-			    		//	console.log(sockets.length);
-			    		//});
+			    		db.connect( async (err) =>{
+				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
+				   			console.log(jstring)
+				    		var cliColl = db.getColl(collections[0])
+				   			console.log("insertando nuevo cli")
+				   			await db.insertDocument(cliColl, jstring).then((doc) => {
+				   				//print client ID
+				   				socket["id"] = JSON.stringify(doc.insertedId);
+				   			});
+			    			sockets.push(socket);
+			    			socket.write(`{ "id" : ${socket["id"]}}`)
+			    			console.log(sockets.length);
+			    		});
 			    		console.log("id 0")
 		    	}else { //cuando el cliente ya tiene id
 		    		socket["id"] = JSON.stringify(pData.head.id)
 		    		if (pData.body.message === "Command executed"){
 		    			console.log(pData)
 		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
-		    			//db.connect( async (err) =>{ //input a la BBDD del output del comando
-		    			//	var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
-		    			//	var cmdColl = db.getColl(collections[1])
-		    			//	await db.insertDocument(cmdColl, cjstring)
-		    			//	console.log("input del output de la cmd")
-		    			//})
+		    			db.connect( async (err) =>{ //input a la BBDD del output del comando
+		    				var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
+		    				var cmdColl = await db.getColl(collections[1])
+		    				await db.insertDocument(cmdColl, cjstring)
+		    				console.log("input del output de la cmd")
+		    			})
 		    			fetch(url, {
 						  method: 'POST', // or 'PUT'
 						  headers:{
@@ -92,6 +92,15 @@ function startSockets() {
 					return value !== socket;
 				});
 				sockets = filtered
+				console.log(typeof socket["id"])
+				db.connect( async (err) =>{
+					var cliColl = await db.getColl(collections[1])
+					//var cliId = db.getPrimaryKey(socket["id"])
+					await db.updateDocument(cliColl, {_id:ObjectId(socket["id"])}, {$set:{status:{alive:false}}}).then((doc) =>{
+						var update = doc
+						console.log(doc)
+					})
+				})
 				console.log(`connection closed: ${socket.remoteAddress}:${socket.remotePort}`);
 			} else if (socket === websocket){
 				console.log('websocket closed')
