@@ -4,6 +4,8 @@ const https = require('https');
 const http = require('http');
 const fetch = require('node-fetch');
 const ws = require('ws');
+const db = require('../database/config.js');
+const collections = ['client', 'comanda', 'user'];
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -18,18 +20,44 @@ function startBackend(){
         cert: fs.readFileSync('./certs/server.crt'),
     };
     const server = https.createServer(options, app);
-    const wss = new ws.Server({ server });
+    const wss = new ws.Server( {port: 8081} );
     wss.on('connection', (ws) => {
+        /* Send test message to check if conn has been established
+            with frontend or not
+        */
+        
         //connection is up, let's add a simple simple event
         ws.on('message', (message) => {
-    
+            messageArgs = message.split(' ')
+
+            if(messageArgs[0] == "GET"){
+                if(messageArgs[1] == "botList"){
+                    console.log("Sending bot list to Frontend")
+                    // Executar query a la database i retornar dades
+                    db.connect ( (err) => {
+                        if(err) {
+                            console.log(err);
+                        } else {
+                            
+                            var client = db.getColl(collections[0]);
+                            db.getDocuments(client, {}).then( (doc, err) => {
+                                ws.send("botlist: " + JSON.stringify(doc))
+                            });
+                        }
+
+                    });
+                }
+            }
+
+
             //log the received message and send it back to the client
-            console.log('received: %s', message);
-            ws.send(`Hello, you sent -> ${message}`);
-        });
-        //send immediatly a feedback to the incoming connection    
-        ws.send('Hi there, I am a WebSocket server');
+
+            console.log('Frontend says: %s', message);
+        });    
+
     });
+
+
     app.get('/', public);
     app.get('/consolelog', (req, res)=>{
         console.log("Esto se ejecuta en la consola del servidor");
