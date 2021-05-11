@@ -9,7 +9,8 @@ const collections = ['client', 'comanda', 'user'];
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
-
+const path = require('path');
+const cors = require('cors');
 
 function startBackend(){
     const app = express();
@@ -56,14 +57,19 @@ function startBackend(){
         });    
 
     });
+    app.use(cors());
+    app.use(express.static(path.join(__dirname + '/../../public')));
 
-
-    app.get('/', public);
     app.get('/consolelog', (req, res)=>{
         console.log("Esto se ejecuta en la consola del servidor");
     });
     app.post('/outputback', jsonParser, (req, res)=>{//comando=req.body.cmd, output=req.body.output, endpoint=req.body.endp
         console.log(`rebut:\ncomando:${req.body.cmd}\n${req.body.output}endpoint:${req.body.endp}`);
+        wss.clients.forEach((client) => {
+            if (client.readyState === ws.OPEN) {
+              client.send(JSON.stringify({ endp : req.body.endp, command : req.body.cmd, output : req.body.output  }));
+            }
+          });
     });
     app.get('/command=:cmd/endp=:hosts', async (req, res)=>{
         let resdata = await fetch(`http://localhost:1234/command=${req.params.cmd}_._/endp=${req.params.hosts}`).then(res =>{
@@ -75,7 +81,7 @@ function startBackend(){
         console.log("Console log fora del fetch:", resdata)
         res.send(resdata)
     });
-    app.post('/sendcommands', urlencodedParser,async (req, res) =>{
+    app.post('/sendcommands', jsonParser,async (req, res) =>{
         let command = req.body.cmd
         let endpoints = req.body.endp
         console.log("CMD: ", command, "\nENDP: ", endpoints)
@@ -88,8 +94,8 @@ function startBackend(){
         console.log("Console log fora del fetch:", resdata)
         res.send(resdata)
     })
-    app.get('*', (req, res)=>{
-        res.send("Error 404: Bro esta pagina no existe XD")
+    app.get('*', (req,res) =>{
+        res.sendFile(path.join(__dirname+'/../../public/index.html'));
     });
     server.listen(port, () => {
         console.log(`Server started on port ${server.address().port} :)`);
