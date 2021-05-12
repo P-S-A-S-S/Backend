@@ -4,13 +4,13 @@ const https = require('https');
 const http = require('http');
 const fetch = require('node-fetch');
 const ws = require('ws');
-const db = require('../database/config.js');
-const collections = ['client', 'comanda', 'user'];
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 const path = require('path');
 const cors = require('cors');
+const db = require('../database/config.js');
+const collections = ['client', 'comanda', 'user'];
 const {parseBinary} = require('./helpers/parseBinary');
 
 function startBackend(){
@@ -65,6 +65,17 @@ function startBackend(){
     app.get('/consolelog', (req, res)=>{
         console.log("Esto se ejecuta en la consola del servidor");
     });
+    app.get('/gethistory', (req, res)=>{
+        db.connect( async (err) =>{ //input a la BBDD del output del comando
+            var cmdColl = await db.getColl(collections[1])
+            await db.getDocuments(cmdColl, {}).then((doc) =>{
+                var commands = doc
+                res.send(commands)
+                console.log(commands)
+            })
+        })
+    })
+    
     app.post('/outputback', jsonParser, (req, res)=>{//comando=req.body.cmd, output=req.body.output, endpoint=req.body.endp
         console.log(`rebut:\ncomando:${req.body.cmd}\n${req.body.output}endpoint:${req.body.endp}`);
         wss.clients.forEach( async (client) => {

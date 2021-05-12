@@ -65,4 +65,8 @@ const updateDocument = (coll, filter, update) => {
 	return coll.updateOne(filter, update);
 }
 
-module.exports = {connect, getPrimaryKey, getDB, getColl, getDocuments, insertDocument, updateDocument};
+const updateColl = (coll, filter, update) => {
+	return coll.updateMany(filter, update);
+}
+
+module.exports = {connect, getPrimaryKey, getDB, getColl, getDocuments, insertDocument, updateDocument, updateColl};
