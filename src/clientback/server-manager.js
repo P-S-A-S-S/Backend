@@ -11,6 +11,7 @@ const split = require ("split");
 const fetch = require('node-fetch');
 const http = require ("http");
 const https = require('https');
+const ObjectID = require('mongodb').ObjectID;
 const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
     });
@@ -58,7 +59,7 @@ function startSockets() {
 			    			console.log(sockets.length);
 			    		});
 			    		console.log("id 0")
-		    	}else { //cuando el cliente ya tiene id
+		    	}else { //cuando el cliente ya tiene idpointer
 		    		socket["id"] = JSON.stringify(pData.head.id)
 		    		if (pData.body.message === "Command executed"){
 		    			console.log(pData)
@@ -96,7 +97,9 @@ function startSockets() {
 				db.connect( async (err) =>{
 					var cliColl = await db.getColl(collections[1])
 					//var cliId = db.getPrimaryKey(socket["id"])
-					await db.updateDocument(cliColl, {_id:ObjectId(socket["id"])}, {$set:{status:{alive:false}}}).then((doc) =>{
+					const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
+					console.log("La id: ", ObjectId)
+					await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:false}}}).then((doc) =>{
 						var update = doc
 						console.log(doc)
 					})
