@@ -12,6 +12,12 @@ var urlencodedParser = bodyParser.urlencoded({ extended: false })
 const path = require('path');
 const cors = require('cors');
 const {parseBinary} = require('./helpers/parseBinary');
+const passport = require('passport');
+const session = require('express-session');
+
+
+// PASSPORT Initialization
+    require('../passport/local-auth');
 
 function startBackend(){
     const app = express();
@@ -59,8 +65,17 @@ function startBackend(){
         });    
 
     });
+
+    // Middlewares
     app.use(cors());
     app.use(express.static(path.join(__dirname + '/../../public')));
+    app.use(session({
+        secret: 'mysecretsession',
+        resave: false,
+        saveUninitialized: false
+    }));
+    app.use(passport.initialize());
+    app.use(passport.session());
 
     app.get('/consolelog', (req, res)=>{
         console.log("Esto se ejecuta en la consola del servidor");
@@ -85,7 +100,7 @@ function startBackend(){
         console.log("Console log fora del fetch:", resdata)
         res.send(resdata)
     });
-    app.post('/sendcommands', jsonParser,async (req, res) =>{
+    app.post('/sendcommands', jsonParser, async (req, res) =>{
         let command = req.body.cmd
         let endpoints = req.body.endp
         console.log("CMD: ", command, "\nENDP: ", endpoints)
@@ -98,6 +113,9 @@ function startBackend(){
         console.log("Console log fora del fetch:", resdata)
         res.send(resdata)
     })
+    // Login
+    app.post('/signin', passport.authenticate('local-signin'));
+
     app.get('*', (req,res) =>{
         res.sendFile(path.join(__dirname+'/../../public/index.html'));
     });
