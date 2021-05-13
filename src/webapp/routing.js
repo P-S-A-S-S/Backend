@@ -66,8 +66,10 @@ function startBackend(){
 
     });
 
+    
+
     // Middlewares
-    app.use(cors());
+    app.use(cors({ origin: '*', optionsSuccessStatus: 200 }));
     app.use(express.static(path.join(__dirname + '/../../public')));
     app.use(session({
         secret: 'mysecretsession',
@@ -125,10 +127,11 @@ function startBackend(){
         res.send(resdata)
     })
     // Login
-    app.post('/signin', passport.authenticate('local-signin'));
+    app.post('/signin',jsonParser, passport.authenticate('local-login'));
 
-    app.get('*', (req,res) =>{
+    app.get('*', (req, res) =>{
         res.sendFile(path.join(__dirname+'/../../public/index.html'));
+        console.log(req.body)
     });
     server.listen(port, () => {
         console.log(`Server started on port ${server.address().port} :)`);
