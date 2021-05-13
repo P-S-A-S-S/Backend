@@ -5,12 +5,13 @@ const fs = require ("fs");
 const db = require('../database/config.js');
 // Llistat amb els noms de les colleccions
 const collections = ['client', 'comanda', 'user'];
-const encrypt = require('./crypto/crypto');
+const ciph = require('./crypto/crypto');
 const resp = require('./callback-manager')
 const split = require ("split");
 const fetch = require('node-fetch');
 const http = require ("http");
 const https = require('https');
+var ObjectID = require('mongodb').ObjectID;
 const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
     });
@@ -25,6 +26,9 @@ function startSockets() {
 	let websocket = [];
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
+		ciph.genkeypair()
+		var test = ciph.encrypt("test")
+		ciph.decrypt(test)
 	});
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
@@ -92,11 +96,11 @@ function startSockets() {
 					return value !== socket;
 				});
 				sockets = filtered
-				console.log(typeof socket["id"])
+				var oID = JSON.parse(socket["id"].trim())
 				db.connect( async (err) =>{
 					var cliColl = await db.getColl(collections[1])
-					//var cliId = db.getPrimaryKey(socket["id"])
-					await db.updateDocument(cliColl, {_id:ObjectId(socket["id"])}, {$set:{status:{alive:false}}}).then((doc) =>{
+					var cliId = new ObjectID(oID)
+					await db.updateDocument(cliColl, {_id:cliId}, {$set:{alive:false,lastconnection:new Date()}}).then((doc) =>{
 						var update = doc
 						console.log(doc)
 					})
@@ -114,11 +118,6 @@ function startSockets() {
 };
 exports.startSockets = startSockets;
 //const found = sockets.find(element=> socket) busca un socket al array, retorna objecte
-			//extrae ip y puerto del array de sockets
-	        //const index = sockets.findIndex( (o) => { 
-	        //    return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
-	        //}); 
-	        //extrae ip y puerto del array de websockets
 //	        const windex = websocket.findeindex( (z) =>{
 //	        	return z.remoteAddress === websocket.remoteAddress) && (z.remotePort === websocket.remotePort)
 //	        })
@@ -126,3 +125,4 @@ exports.startSockets = startSockets;
 			//sockets.forEach((sock) => { 
 			//	sock.write(`${clientAddress} disconnected\n`); 
 			//});
+
