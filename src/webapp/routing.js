@@ -28,7 +28,7 @@ function startBackend(){
         cert: fs.readFileSync('./certs/server.crt'),
     };
     const server = https.createServer(options, app);
-    const wss = new ws.Server( {port: 8081} );
+    const wss = new ws.Server( { server } );
     wss.on('connection', (ws) => {
         /* Send test message to check if conn has been established
             with frontend or not
