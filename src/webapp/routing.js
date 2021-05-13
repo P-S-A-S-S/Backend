@@ -126,6 +126,23 @@ function startBackend(){
         console.log("Console log fora del fetch:", resdata)
         res.send(resdata)
     })
+    app.post('/status', jsonParser, async (req, res) =>{
+        try {
+            if(req.body.alive){
+                wss.clients.forEach( async (client) => {
+                    if (client.readyState === ws.OPEN) {
+                        var clientdb = db.getColl(collections[0]);
+                        db.getDocuments(clientdb, {}).then( (doc, err) => {
+                            const binaryRes = parseBinary("botlist: " + JSON.stringify(doc));
+                            client.send(binaryRes)
+                        });   
+                    }
+                  });
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    })
     // Login
     app.post('/signin',jsonParser, passport.authenticate('local-login'));
 

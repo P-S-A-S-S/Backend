@@ -34,10 +34,16 @@ function startSockets() {
 				var update = doc
 			})
 		});
+<<<<<<< HEAD
 		/* ciph.genkeypair()
 		var test = ciph.encrypt("test")
 		ciph.decrypt(test)
 		*/	
+=======
+		//ciph.genkeypair()
+		//var test = ciph.encrypt("test")
+		//ciph.decrypt(test)
+>>>>>>> 5ad85b7407a106a68177812c310f8cc90f600f54
 	});
 
 	server.on("connection", (socket) => {
@@ -96,16 +102,7 @@ function startSockets() {
 		    		}
 		    		if (sockets.includes(socket)===false){
 		    			sockets.push(socket);
-		    			var alive = {alive:true}
-		    			fetch(statusurl, {
-						  method: 'POST', // or 'PUT'
-						  headers:{
-						    'Content-Type': 'application/json',
-						    'Accept': 'application/json'
-						  },
-						  body: JSON.stringify(outdata), // data can be `string` or {object}!
-						  agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
-						}).catch(error => console.error('Error:', error))
+
 		    			db.connect( async (err) =>{
 							var cliColl = await db.getColl(collections[0])
 							const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
@@ -115,6 +112,16 @@ function startSockets() {
 								console.log(doc)
 							})
 						})
+						var alive = {alive:true}
+						fetch(statusurl, {
+							method: 'POST', // or 'PUT'
+							headers:{
+							  'Content-Type': 'application/json',
+							  'Accept': 'application/json'
+							},
+							body: JSON.stringify(alive), // data can be `string` or {object}!
+							agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
+						  }).catch(error => console.error('Error:', error))
 		    		}
 		    	}
 	    	};
@@ -137,6 +144,17 @@ function startSockets() {
 						console.log(doc)
 					})
 				})
+				var alive = {alive:true}
+				fetch(statusurl, {
+					method: 'POST', // or 'PUT'
+					headers:{
+					  'Content-Type': 'application/json',
+					  'Accept': 'application/json'
+					},
+					body: JSON.stringify(alive), // data can be `string` or {object}!
+					agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
+				}).catch(error => console.error('Error:', error))
+
 				console.log(`connection closed: ${socket.remoteAddress}:${socket.remotePort}`);
 			} else if (socket === websocket){
 				console.log('websocket closed')
