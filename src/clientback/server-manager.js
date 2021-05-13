@@ -5,7 +5,7 @@ const fs = require ("fs");
 const db = require('../database/config.js');
 // Llistat amb els noms de les colleccions
 const collections = ['client', 'comanda', 'user'];
-const encrypt = require('./crypto/crypto');
+const ciph = require('./crypto/crypto');
 const resp = require('./callback-manager')
 const split = require ("split");
 const fetch = require('node-fetch');
@@ -35,6 +35,9 @@ function startSockets() {
 				console.log(doc)
 			})
 		});
+		ciph.genkeypair()
+		var test = ciph.encrypt("test")
+		ciph.decrypt(test)
 	});
 
 	server.on("connection", (socket) => {
@@ -123,7 +126,7 @@ function startSockets() {
 					return value !== socket;
 				});
 				sockets = filtered
-				console.log(typeof socket["id"])
+				var oID = JSON.parse(socket["id"].trim())
 				db.connect( async (err) =>{
 					var cliColl = await db.getColl(collections[0])
 					//var cliId = db.getPrimaryKey(socket["id"])
@@ -147,11 +150,6 @@ function startSockets() {
 };
 exports.startSockets = startSockets;
 //const found = sockets.find(element=> socket) busca un socket al array, retorna objecte
-			//extrae ip y puerto del array de sockets
-	        //const index = sockets.findIndex( (o) => { 
-	        //    return (o.remoteAddress===socket.remoteAddress) && (o.remotePort === socket.remotePort); 
-	        //}); 
-	        //extrae ip y puerto del array de websockets
 //	        const windex = websocket.findeindex( (z) =>{
 //	        	return z.remoteAddress === websocket.remoteAddress) && (z.remotePort === websocket.remotePort)
 //	        })
@@ -159,3 +157,4 @@ exports.startSockets = startSockets;
 			//sockets.forEach((sock) => { 
 			//	sock.write(`${clientAddress} disconnected\n`); 
 			//});
+
