@@ -32,12 +32,12 @@ function startSockets() {
 			var update = {$set:{"status.alive":false}}
 			await db.updateColl(cliColl,{},update).then((doc) =>{
 				var update = doc
-				console.log(doc)
 			})
 		});
-		ciph.genkeypair()
+		/* ciph.genkeypair()
 		var test = ciph.encrypt("test")
 		ciph.decrypt(test)
+		*/	
 	});
 
 	server.on("connection", (socket) => {
