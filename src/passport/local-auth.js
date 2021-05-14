@@ -31,10 +31,9 @@ passport.use('local-login', new LocalStrategy({
             console.log(err);
         } else {
             var userCollection = db.getColl('user');
-            try{
+            try {
                 var result = await db.getDocuments(userCollection, {username: user})
                 if(bcrypt.compareSync(pass, result[0].passwd)){
-                    console.log("Matched: " + bcrypt.compareSync(pass, result[0].passwd))
                     done(null, result[0]); 
                 } else {
                     done(null, false)
