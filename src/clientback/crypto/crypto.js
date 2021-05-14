@@ -19,7 +19,6 @@ function genkeypair(){
   });
 	return [publicKey, privateKey]
 }
-
 function encrypt(data,privateKey){
 	const encryptedData = crypto.privateEncrypt(
 		{
@@ -33,7 +32,6 @@ function encrypt(data,privateKey){
 	console.log("encypted data: ", encryptedData.toString("base64"))
 	return encryptedData
 }
-
 function decrypt(data,privateKey){
 	const buffer = Buffer.from(data, 'base64')
 	const decryptedData = crypto.privateDecrypt(
