@@ -34,18 +34,10 @@ function startSockets() {
 				var update = doc
 			})
 		});
-<<<<<<< HEAD
-		/* ciph.genkeypair()
-		var test = ciph.encrypt("test")
-		ciph.decrypt(test)
-		*/	
-=======
-		//ciph.genkeypair()
-		//var test = ciph.encrypt("test")
-		//ciph.decrypt(test)
->>>>>>> 5ad85b7407a106a68177812c310f8cc90f600f54
+		const keys = ciph.genkeypair()
+		console.log(typeof keys[0])
+		console.log(ciph.encrypt("test",keys[1]))
 	});
-
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
