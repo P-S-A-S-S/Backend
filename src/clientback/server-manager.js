@@ -34,12 +34,11 @@ function startSockets() {
 				var update = doc
 			})
 		});
-		/* ciph.genkeypair()
-		var test = ciph.encrypt("test")
-		ciph.decrypt(test)
-		*/	
-	});
 
+		const keys = ciph.genkeypair()
+		console.log(ciph.encrypt("test",keys[1]))
+
+	});
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
@@ -55,6 +54,8 @@ function startSockets() {
 	    		} catch (error) {
 					console.log(error)
 				}
+			} else if( data==="get public key"){
+				socket.write(keys[0])
 	    	} else{
 	    		const pData = JSON.parse(data)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
