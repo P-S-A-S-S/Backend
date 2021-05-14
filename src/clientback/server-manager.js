@@ -34,16 +34,10 @@ function startSockets() {
 				var update = doc
 			})
 		});
-<<<<<<< HEAD
 		/* ciph.genkeypair()
 		var test = ciph.encrypt("test")
 		ciph.decrypt(test)
 		*/	
-=======
-		//ciph.genkeypair()
-		//var test = ciph.encrypt("test")
-		//ciph.decrypt(test)
->>>>>>> 5ad85b7407a106a68177812c310f8cc90f600f54
 	});
 
 	server.on("connection", (socket) => {
