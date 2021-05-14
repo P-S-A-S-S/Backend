@@ -5,7 +5,7 @@
 //Connection daemon
 const MongoClient = require('mongodb').MongoClient;
 // Getting MongoDB ObjectID object
-//const ObjectID = require('mongodb').ObjectID;
+const ObjectID = require('mongodb').ObjectID;
 // Connection URL, mongodb://10.5.0.2:27017/SASS connects directly to the desidered database
 const url = 'mongodb://127.0.0.1:27017/';
 // Database Name
@@ -65,4 +65,8 @@ const updateDocument = (coll, filter, update) => {
 	return coll.updateOne(filter, update);
 }
 
-module.exports = {connect, getPrimaryKey, getDB, getColl, getDocuments, insertDocument, updateDocument};
+const updateColl = (coll, filter, update) => {
+	return coll.updateMany(filter, update);
+}
+
+module.exports = {connect, getPrimaryKey, getDB, getColl, getDocuments, insertDocument, updateDocument, updateColl};

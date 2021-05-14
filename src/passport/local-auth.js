@@ -4,7 +4,7 @@ const db = require('../database/config')
 const bcrypt = require('bcrypt')
 
 passport.serializeUser( (result, done) =>{
-    done(null, result[0]._id);
+    done(null, result._id);
 });
 
 passport.deserializeUser( async (serializedID, done) => {
@@ -14,11 +14,6 @@ passport.deserializeUser( async (serializedID, done) => {
         } else {
             var userCollection = db.getColl('user');
             var result = db.getDocuments(userCollection, {id: serializedID})
-            /*
-                .then( (doc) => {
-                    done(null, doc);
-                });
-            */
             done(null, result);
         }
     });
@@ -30,21 +25,34 @@ passport.use('local-login', new LocalStrategy({
     passwordField: 'password',
     passReqToCallback: true
 }, async (req, user, pass, done) => {
+    console.log("user: " + user + "\npass: " + pass)
     db.connect( async (err) => {
         if(err){
             console.log(err);
         } else {
             var userCollection = db.getColl('user');
             var hash = bcrypt.hashSync(pass, bcrypt.genSaltSync(10));
-            var result = await db.getDocuments(userCollection, {username: user, passwd: hash})
-                /*.then( (doc, err) => {
-                if(err){
-                    console.log(err);
-                } else {
-                    console.log(doc);
-                }
-            });*/
-            done(null, result);
+            console.log(hash)
+            var result = await db.getDocuments(userCollection, {username: user, passwd: pass})
+            done(null, result[0]);      
+        }
+    });
+}));
+
+passport.use('local-modify', new LocalStrategy({
+    usernameField: 'username',
+    passwordField: 'password',
+    passReqToCallback: true
+}, async (req, user, pass, done) => {
+    console.log("user: " + user + "\npass: " + pass)
+    db.connect( async (err) => {
+        if(err){
+            console.log(err);
+        } else {
+            var userCollection = db.getColl('user');
+            var result = await db.getDocuments(userCollection, {username: user, passwd: pass});
+            var hash = bcrypt.compareSync(pass, result[0].passwd)
+            done(null, result[0]);
         }
     });
 }));

