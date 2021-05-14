@@ -5,30 +5,25 @@ function genkeypair(){
 	// The `generateKeyPairSync` method accepts two arguments:
 	// 1. The type of keys we want, which in this case is "rsa"
 	// 2. An object with the properties of the key
-	const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-		// The standard secure default length for RSA keys is 2048 bits
-		modulusLength: 3072,
-	})
-	var pkey = publicKey.toString()
-	var prikey = privateKey.toString()
-	fs.writeFile("public.cert", pkey, (err) => {
-	  if (err) console.log(err);
-	  console.log("Successfully Written public.");
-	});
-	fs.writeFile("private.key", prikey, (err) => {
-	  if (err) console.log(err);
-	  console.log("Successfully Written private.");
-	})
+	
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
+    modulusLength: 3072,
+    publicKeyEncoding: {
+      type: 'spki',
+      format: 'pem'
+    },
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format: 'pem'
+    }
+  });
+	return [publicKey, privateKey]
 }
 
-function encrypt(data){
-	const publicKey = fs.readFileSync("public.cert").toString()
-	console.log(publicKey)
-	const encryptedData = crypto.publicEncrypt(
+function encrypt(data,privateKey){
+	const encryptedData = crypto.privateEncrypt(
 		{
-			key: publicKey,
-			padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-			oaepHash: "sha512",
+			key: privateKey
 		},
 		// We convert the data string to a buffer using `Buffer.from`
 		Buffer.from(data)
@@ -60,9 +55,6 @@ function decrypt(data){
 
 // The decrypted data is of the Buffer type, which we can convert to a
 // string to reveal the original data
-
-
-
 
 
 
