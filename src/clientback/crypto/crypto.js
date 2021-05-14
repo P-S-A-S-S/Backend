@@ -7,7 +7,7 @@ function genkeypair(){
 	// 2. An object with the properties of the key
 	
   const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
-    modulusLength: 3072,
+    modulusLength: 4096,
     publicKeyEncoding: {
       type: 'spki',
       format: 'pem'

@@ -25,6 +25,9 @@ function startSockets() {
 	const statusurl = "https://127.0.0.1:5000/status"
 	let sockets = [];
 	let websocket = [];
+	//keys[0]=publickey keys[1]=privateKey
+	const keys = ciph.genkeypair()
+	console.log(ciph.encrypt("test",keys[1]))
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
 		db.connect( async (err) =>{
@@ -34,8 +37,6 @@ function startSockets() {
 				var update = doc
 			})
 		});
-		const keys = ciph.genkeypair()
-		console.log(ciph.encrypt("test",keys[1]))
 	});
 	server.on("connection", (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
@@ -45,16 +46,20 @@ function startSockets() {
 	    	//si getdata == a GET
 	    	var getdata = String(data).split(" ", 2);
 	    	console.log(`getdata : ${getdata[0]}`)
+	    	//identifica si la variable getdata contiene un get
 	    	if (getdata[0] === "GET") {
 	    		try {
+	    			//envia comando a los clientes y responde al fetch
 		    		websocket.push(socket); 		
-		    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
+		    		resp.httpRes(socket, sockets, getdata, keys[1]) //funcion callback-manager httpRes. encriptar
 	    		} catch (error) {
 					console.log(error)
 				}
 			} else if( data==="get public key"){
 				socket.write(keys[0])
 	    	} else{
+	    		//a partir de este punto se entiende que data viene de un cliente y por consecuencia ha de ser desencriptada.
+	    		//const pData = JSON.parse(ciph.decrypt(data,keys[1]))
 	    		const pData = JSON.parse(data)
 	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
 			    		db.connect( async (err) =>{
@@ -67,13 +72,13 @@ function startSockets() {
 				   				socket["id"] = JSON.stringify(doc.insertedId);
 				   			});
 			    			sockets.push(socket);
-			    			socket.write(`{ "id" : ${socket["id"]}}`)
+			    			//socket.write(ciph.encrypt(`{ "id" : ${socket["id"]}}`, keys[1]))
+			    			socket.write(`{ "id" : ${socket["id"]}}`) //encriptar
 			    			console.log(sockets.length);
 			    		});
 			    		console.log("id 0")
 		    	}else { //cuando el cliente ya tiene idpointer
 		    		socket["id"] = JSON.stringify(pData.head.id)
-
 		    		if (pData.body.message === "Command executed"){
 		    			//console.log(pData)
 		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
@@ -95,7 +100,7 @@ function startSockets() {
 		    		}
 		    		if (sockets.includes(socket)===false){
 		    			sockets.push(socket);
-
+		    			//modifica el documento del cliente en la bbdd para que su estado sea true
 		    			db.connect( async (err) =>{
 							var cliColl = await db.getColl(collections[0])
 							const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
@@ -105,6 +110,7 @@ function startSockets() {
 								console.log(doc)
 							})
 						})
+						//envia al backend el estado del cliente al conectarse
 						var alive = {alive:true}
 						fetch(statusurl, {
 							method: 'POST', // or 'PUT'
@@ -119,6 +125,7 @@ function startSockets() {
 		    	}
 	    	};
 	    });
+	    //al cerrarse un socket
 		socket.on('close', (data) => {
 			var socl = sockets.includes(socket); //busca en el array si es troba el socket
 			if (socl === true) {
@@ -127,6 +134,7 @@ function startSockets() {
 				});
 				sockets = filtered
 				var oID = JSON.parse(socket["id"].trim())
+				//modifica el documento del cliente para que su estado sea false
 				db.connect( async (err) =>{
 					var cliColl = await db.getColl(collections[0])
 					//var cliId = db.getPrimaryKey(socket["id"])
@@ -137,6 +145,7 @@ function startSockets() {
 						console.log(doc)
 					})
 				})
+				//envia al backend el estado del cliente al desconectarse
 				var alive = {alive:true}
 				fetch(statusurl, {
 					method: 'POST', // or 'PUT'
@@ -151,6 +160,10 @@ function startSockets() {
 				console.log(`connection closed: ${socket.remoteAddress}:${socket.remotePort}`);
 			} else if (socket === websocket){
 				console.log('websocket closed')
+				var filtered = websocket.filter(function(value, index, arr){ //extreu el socket de l'array
+					return value !== socket;
+				});
+				websocket = filtered
 			}	
 	    }); 
 		// Gestor d'errors 

