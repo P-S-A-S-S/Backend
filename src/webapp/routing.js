@@ -145,8 +145,8 @@ function startBackend(){
     })
     // Login
     app.post('/signin',jsonParser, passport.authenticate('local-login'), (req, res) => {
-        console.log("Request data: " + req.user);
-        if(req.user){
+        console.log(req.user);
+        if(req.user) {
             res.send({valid: true});
         }
     });
