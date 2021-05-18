@@ -34,8 +34,9 @@ function encrypt(data,privateKey){
 	return encryptedData
 }
 
-function decrypt(data,privateKey){
-	const buffer = Buffer.from(data, 'base64')
+async function decrypt(data,privateKey){
+	const buffer = await Buffer.from(data, 'utf-8')
+	console.log("Buffer: ", buffer)
 	const decryptedData = crypto.privateDecrypt(
 	{
 		key: privateKey,
@@ -43,9 +44,11 @@ function decrypt(data,privateKey){
 		// same hashing function and padding scheme that we used to
 		// encrypt the data in the previous step
 	},
-	data
-	)
-	console.log("decrypted data: ", decryptedData.toString())
+	buffer)
+	//console.log("Ddata: ", decryptedData)
+	await console.log("IsBuffer: ", buffer);
+	//console.log("decrypted data: ", decryptedData.toString())
+	return decryptedData.toString()
 }
 
 
