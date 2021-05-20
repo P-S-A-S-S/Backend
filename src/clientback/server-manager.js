@@ -80,7 +80,6 @@ function startSockets() {
 		    	}else { //cuando el cliente ya tiene idpointer
 		    		socket["id"] = JSON.stringify(pData.head.id)
 		    		if (pData.body.message === "Command executed"){
-		    			//console.log(pData)
 		    			var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
 		    			db.connect( async (err) =>{ //input a la BBDD del output del comando
 		    				var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
@@ -173,12 +172,3 @@ function startSockets() {
 	});
 };
 exports.startSockets = startSockets;
-//const found = sockets.find(element=> socket) busca un socket al array, retorna objecte
-//	        const windex = websocket.findeindex( (z) =>{
-//	        	return z.remoteAddress === websocket.remoteAddress) && (z.remotePort === websocket.remotePort)
-//	        })
-	        //if (index !== -1) sockets.splice(index, 1); 
-			//sockets.forEach((sock) => { 
-			//	sock.write(`${clientAddress} disconnected\n`); 
-			//});
-

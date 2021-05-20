@@ -69,7 +69,7 @@ function startBackend(){
     
 
     // Middlewares
-    app.use(cors({ origin: '*', optionsSuccessStatus: 200 }));
+    app.use(cors({ origin: ['http://localhost:3000'], optionsSuccessStatus: 200 }));
     app.use(express.static(path.join(__dirname + '/../../public')));
     app.use(session({
         secret: 'mysecretsession',
@@ -144,7 +144,16 @@ function startBackend(){
         }
     })
     // Login
-    app.post('/signin',jsonParser, passport.authenticate('local-login'));
+    app.post('/signin',jsonParser, passport.authenticate('local-login'), (req, res) => {
+        console.log(req.user);
+        if(req.user) {
+            res.send({valid: true});
+        }
+    });
+
+    app.post('/modify',jsonParser, passport.authenticate('local-modify'), (req, res) => {
+            res.send({modified: true});
+    });
 
     app.get('*', (req, res) =>{
         res.sendFile(path.join(__dirname+'/../../public/index.html'));
