@@ -32,15 +32,10 @@ function encrypt(data,privateKey){
 	console.log("encypted data: ", encryptedData.toString("base64"))
 	return encryptedData
 }
-<<<<<<< HEAD
-function decrypt(data,privateKey){
-	const buffer = Buffer.from(data, 'base64')
-=======
 
 async function decrypt(data,privateKey){
 	const buffer = await Buffer.from(data, 'utf-8')
 	console.log("Buffer: ", buffer)
->>>>>>> ce369eca559f84fa1d41d71a990c7ba7ae389957
 	const decryptedData = crypto.privateDecrypt(
 	{
 		key: privateKey,
