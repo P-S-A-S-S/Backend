@@ -48,14 +48,13 @@ async function decrypt(data,privateKey){
 	return decryptedData.toString()
 }
 
-const symDecrpyt = async (sym_key, msg, array)=>{
+const symDecrpyt = async (sym_key, msg)=>{
     var spawn = require('child_process').spawn,
         py    = spawn('python3', ['src/clientback/crypto/symDec.py', sym_key, msg]),
         output = '';
 		py.stdin.setEncoding = 'utf-8';
 		py.stdout.on('data', async (data) => {
 			output += await data.toString();
-			await array.push(output)
 		});
 		// Handle error output
 		py.stderr.on('data', async (data) => {
@@ -68,7 +67,7 @@ const symDecrpyt = async (sym_key, msg, array)=>{
 	
 		await once(py, 'close')
 	
-		return array;
+		return output;
 }
 
 const symEncrpyt = async (sym_key, msg)=>{

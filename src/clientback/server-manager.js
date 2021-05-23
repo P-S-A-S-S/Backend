@@ -60,10 +60,10 @@ function startSockets() {
 							socket["sym"] = decrypted
 						}
 					} else{
-						const symData = await ciph.symDecrpyt(socket["sym"], await data.toString(), [])
-						const pData = await JSON.parse(symData[0])
+						const symData = await ciph.symDecrpyt(socket["sym"], await data.toString())
+						const pData = await JSON.parse(symData)
 						if (pData.head.id === 0) { //identifica cliente con  id 0
-								db.connect( async (err) =>{
+								await db.connect( async (err) =>{
 									var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
 									console.log(jstring)
 									var cliColl = db.getColl(collections[0])
@@ -73,7 +73,10 @@ function startSockets() {
 										socket["id"] = JSON.stringify(doc.insertedId);
 									});
 									sockets.push(socket);
-									socket.write(`{ "id" : ${socket["id"]}}`)
+									let theQuery = `{ "id" : ${socket["id"]}}`
+									let encrypted = await ciph.symEncrpyt(socket["sym"], theQuery)
+									console.log("IdQuery Encrypted: ", encrypted)
+									socket.write(encrypted)
 									console.log(sockets.length);
 								});
 								console.log("id 0")
@@ -98,7 +101,7 @@ function startSockets() {
 								body: JSON.stringify(outdata), // data can be `string` or {object}!
 								agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
 								}).catch(error => console.error('Error:', error))
-								socket.destroy()
+								//socket.destroy()
 							}
 							if (sockets.includes(socket)===false){
 								sockets.push(socket);
