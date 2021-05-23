@@ -35,7 +35,6 @@ function encrypt(data,privateKey){
 
 async function decrypt(data,privateKey){
 	const buffer = await Buffer.from(data, 'utf-8')
-
 	const decryptedData = crypto.privateDecrypt(
 	{
 		key: privateKey,
