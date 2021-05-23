@@ -26,7 +26,6 @@ function startSockets() {
 	let websocket = [];
 	//keys[0]=publickey keys[1]=privateKey
 	const keys = ciph.genkeypair()
-	console.log(ciph.encrypt("test",keys[1]))
 	server.listen(port, host, () => {
 		console.log(`TCP server listening on ${host}:${port}`);
 		db.connect( async (err) =>{
@@ -41,7 +40,6 @@ function startSockets() {
 		var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 		console.log(`new client connected: ${clientAddress}`);
 		socket.on("data", async (data) => {
-	    	console.log(`${clientAddress}: ${data}`); //output mensaje cliente
 	    	//si getdata == a GET
 	    	var getdata = String(data).split(" ", 2);
 			if( data == 'get public key'){
@@ -56,66 +54,73 @@ function startSockets() {
 						console.log(error)
 					}
 				} else{
-					
-					let decrypted = await ciph.decrypt(data, keys[1])
-					const pData = JSON.parse(decrypted)
-					if (pData.head.id === 0) { //identifica cliente con  id 0
-							db.connect( async (err) =>{
-								var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
-								console.log(jstring)
-								var cliColl = db.getColl(collections[0])
-								console.log("insertando nuevo cli")
-								await db.insertDocument(cliColl, jstring).then((doc) => {
-									//print client ID
-									socket["id"] = JSON.stringify(doc.insertedId);
-								});
-								sockets.push(socket);
-								socket.write(`{ "id" : ${socket["id"]}}`)
-								console.log(sockets.length);
-							});
-							console.log("id 0")
-					}else { //cuando el cliente ya tiene idpointer
-						socket["id"] = JSON.stringify(pData.head.id)
-
-						if (pData.body.message === "Command executed"){
-							//console.log(pData)
-							var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
-							db.connect( async (err) =>{ //input a la BBDD del output del comando
-								var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
-								var cmdColl = await db.getColl(collections[1])
-								await db.insertDocument(cmdColl, cjstring)
-								console.log("input del output de la cmd")
-							})
-							fetch(outputurl, {
-							method: 'POST', // or 'PUT'
-							headers:{
-								'Content-Type': 'application/json',
-								'Accept': 'application/json'
-							},
-							body: JSON.stringify(outdata), // data can be `string` or {object}!
-							agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
-							}).catch(error => console.error('Error:', error))
+					if (!socket.hasOwnProperty("sym")){
+						let decrypted = await ciph.decrypt(data, keys[1])
+						if (decrypted.substr(decrypted.length - 1) == "="){
+							socket["sym"] = decrypted
 						}
-						if (sockets.includes(socket)===false){
-							sockets.push(socket);
-							db.connect( async (err) =>{
-								var cliColl = await db.getColl(collections[0])
-								const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
-								console.log("La id: ", ObjectId)
-								await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:true, lastconnection: new Date()}}}).then((doc) =>{
-									var update = doc
+					} else{
+						const symData = await ciph.symDecrpyt(socket["sym"], await data.toString(), [])
+						const pData = await JSON.parse(symData[0])
+						if (pData.head.id === 0) { //identifica cliente con  id 0
+								db.connect( async (err) =>{
+									var jstring= {ip: socket.remoteAddress, status:{alive: true, lastconnection: new Date()}} 
+									console.log(jstring)
+									var cliColl = db.getColl(collections[0])
+									console.log("insertando nuevo cli")
+									await db.insertDocument(cliColl, jstring).then((doc) => {
+										//print client ID
+										socket["id"] = JSON.stringify(doc.insertedId);
+									});
+									sockets.push(socket);
+									socket.write(`{ "id" : ${socket["id"]}}`)
+									console.log(sockets.length);
+								});
+								console.log("id 0")
+						}else { //cuando el cliente ya tiene idpointer
+							socket["id"] = JSON.stringify(pData.head.id)
+
+							if (pData.body.message === "Command executed"){
+								//console.log(pData)
+								var outdata = {"endp":pData.head.id,"cmd":pData.body.command,"output":pData.body.output}
+								db.connect( async (err) =>{ //input a la BBDD del output del comando
+									var cjstring = {data: new Date(), cmd: pData.body.command, output: pData.body.output, client:pData.head.id}
+									var cmdColl = await db.getColl(collections[1])
+									await db.insertDocument(cmdColl, cjstring)
+									console.log("input del output de la cmd")
 								})
-							})
-							var alive = {alive:true}
-							fetch(statusurl, {
+								fetch(outputurl, {
 								method: 'POST', // or 'PUT'
 								headers:{
-								'Content-Type': 'application/json',
-								'Accept': 'application/json'
+									'Content-Type': 'application/json',
+									'Accept': 'application/json'
 								},
-								body: JSON.stringify(alive), // data can be `string` or {object}!
+								body: JSON.stringify(outdata), // data can be `string` or {object}!
 								agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
-							}).catch(error => console.error('Error:', error))
+								}).catch(error => console.error('Error:', error))
+								socket.destroy()
+							}
+							if (sockets.includes(socket)===false){
+								sockets.push(socket);
+								db.connect( async (err) =>{
+									var cliColl = await db.getColl(collections[0])
+									const ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
+									console.log("La id: ", ObjectId)
+									await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:true, lastconnection: new Date()}}}).then((doc) =>{
+										var update = doc
+									})
+								})
+								var alive = {alive:true}
+								fetch(statusurl, {
+									method: 'POST', // or 'PUT'
+									headers:{
+									'Content-Type': 'application/json',
+									'Accept': 'application/json'
+									},
+									body: JSON.stringify(alive), // data can be `string` or {object}!
+									agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
+								}).catch(error => console.error('Error in start client:', error))
+							}
 						}
 					}
 				};
@@ -123,6 +128,7 @@ function startSockets() {
 	    });
 	    //al cerrarse un socket
 		socket.on('close', (data) => {
+			console.log("Closed socket client")
 			var socl = sockets.includes(socket); //busca en el array si es troba el socket
 			if (socl === true) {
 				var filtered = sockets.filter(function(value, index, arr){ //extreu el socket de l'array
@@ -134,7 +140,7 @@ function startSockets() {
 				db.connect( async (err) =>{
 					var cliColl = await db.getColl(collections[0])
 					var ObjectId = new ObjectID(socket["id"].replace(/['"]+/g, ''));
-					console.log("La id: ", ObjectId)
+					console.log("Client down: ", ObjectId)
 					await db.updateDocument(cliColl, {_id:ObjectId}, {$set:{status:{alive:false, lastconnection: new Date()}}}).then((doc) =>{
 						var update = doc
 					})
@@ -149,7 +155,7 @@ function startSockets() {
 					},
 					body: JSON.stringify(alive), // data can be `string` or {object}!
 					agent: httpsAgent,			//agente creado con js para evitar problemas con certificado autofirmado
-				}).catch(error => console.error('Error:', error))
+				}).catch(error => console.error('Error in disconnect client:', error))
 
 				console.log(`connection closed: ${socket.remoteAddress}:${socket.remotePort}`);
 			} else if (socket === websocket){

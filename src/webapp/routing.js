@@ -95,6 +95,7 @@ function startBackend(){
     
     app.post('/outputback', jsonParser, (req, res)=>{//comando=req.body.cmd, output=req.body.output, endpoint=req.body.endp
         console.log(`rebut:\ncomando:${req.body.cmd}\n${req.body.output}endpoint:${req.body.endp}`);
+        req.setTimeout(1800000);
         wss.clients.forEach( async (client) => {
             if (client.readyState === ws.OPEN) {
                 const strJson = await JSON.stringify({ endp : req.body.endp, command : req.body.cmd, output : req.body.output  });
@@ -129,6 +130,7 @@ function startBackend(){
     app.post('/status', jsonParser, async (req, res) =>{
         try {
             if(req.body.alive){
+                req.setTimeout(1800000);
                 wss.clients.forEach( async (client) => {
                     if (client.readyState === ws.OPEN) {
                         var clientdb = db.getColl(collections[0]);

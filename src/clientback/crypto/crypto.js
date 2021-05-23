@@ -1,5 +1,6 @@
 const crypto = require('crypto');
-const fs = require("fs");
+//const spawn = require('child_process').spawn;
+const {once} = require('events');
 
 function genkeypair(){
 	// The `generateKeyPairSync` method accepts two arguments:
@@ -29,18 +30,12 @@ function encrypt(data,privateKey){
 	)
 	// The encrypted data is in the form of bytes, so we print it in base64 format
 	// so that it's displayed in a more readable form
-	console.log("encypted data: ", encryptedData.toString("base64"))
 	return encryptedData
 }
-<<<<<<< HEAD
-function decrypt(data,privateKey){
-	const buffer = Buffer.from(data, 'base64')
-=======
 
 async function decrypt(data,privateKey){
 	const buffer = await Buffer.from(data, 'utf-8')
-	console.log("Buffer: ", buffer)
->>>>>>> ce369eca559f84fa1d41d71a990c7ba7ae389957
+
 	const decryptedData = crypto.privateDecrypt(
 	{
 		key: privateKey,
@@ -50,11 +45,55 @@ async function decrypt(data,privateKey){
 	},
 	buffer)
 	//console.log("Ddata: ", decryptedData)
-	await console.log("IsBuffer: ", buffer);
 	//console.log("decrypted data: ", decryptedData.toString())
 	return decryptedData.toString()
 }
 
+const symDecrpyt = async (sym_key, msg, array)=>{
+    var spawn = require('child_process').spawn,
+        py    = spawn('python3', ['src/clientback/crypto/symDec.py', sym_key, msg]),
+        output = '';
+		py.stdin.setEncoding = 'utf-8';
+		py.stdout.on('data', async (data) => {
+			output += await data.toString();
+			await array.push(output)
+		});
+		// Handle error output
+		py.stderr.on('data', async (data) => {
+		// As said before, convert the Uint8Array to a readable string.
+			await console.log('error:' + data);
+		});
+		py.stdout.on('end', async function(code){
+			await console.log('Client: ' + output);
+		});
+	
+		await once(py, 'close')
+	
+		return array;
+}
+
+const symEncrpyt = async (sym_key, msg)=>{
+    var spawn = require('child_process').spawn,
+        py    = spawn('python3', ['src/clientback/crypto/symEnc.py', sym_key, msg]),
+        output = '';
+		py.stdin.setEncoding = 'utf-8';
+		console.log("Sym_KEYINSIDE: ", sym_key, "MSGINSIDE: ", msg)
+		py.stdout.on('data', async (data) => {
+			output += await data.toString();
+		});
+		// Handle error output
+		py.stderr.on('data', async (data) => {
+		// As said before, convert the Uint8Array to a readable string.
+			await console.log('error:' + data);
+		});
+		py.stdout.on('end', async function(code){
+			await console.log('Server to client: ' + output);
+		});
+	
+		await once(py, 'close')
+	
+		return output;
+}
 
 // The decrypted data is of the Buffer type, which we can convert to a
 // string to reveal the original data
@@ -91,3 +130,5 @@ async function decrypt(data,privateKey){
 exports.encrypt = encrypt;
 exports.decrypt = decrypt;
 exports.genkeypair = genkeypair;
+exports.symDecrpyt = symDecrpyt;
+exports.symEncrpyt = symEncrpyt;
