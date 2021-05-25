@@ -7,8 +7,8 @@ const MongoClient = require('mongodb').MongoClient;
 // Getting MongoDB ObjectID object
 const ObjectID = require('mongodb').ObjectID;
 // Connection URL, mongodb://10.5.0.2:27017/SASS connects directly to the desidered database
-const url = 'mongodb://127.0.0.1:27017/';
-//const url = `mongodb://${process.env.MONGO_URL}:27017`; //MONGO_URL
+//const url = 'mongodb://127.0.0.1:27017/';
+const url = `mongodb://${process.env.MONGO_URL}:27017`; //MONGO_URL
 // Database Name
 const dbName = 'SASS';
 // Additional MongoClient options
